@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { motion } from "motion/react"
 import { ArrowUpRight } from "lucide-react"
 
@@ -9,8 +10,7 @@ const COFFEES = [
     name: "Yirgacheffe",
     meta: "Ethiopia · Light roast",
     note: "Floral, citrus and a clean honeyed finish.",
-    image:
-      "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=900&q=80",
+    image: "/images/f1.jpg",
     alt: "Yirgacheffe roasted coffee beans",
   },
   {
@@ -18,8 +18,7 @@ const COFFEES = [
     name: "Sidamo",
     meta: "Ethiopia · Medium roast",
     note: "Berry sweetness, cocoa and soft tea-like body.",
-    image:
-      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
+    image: "/images/f2.jpg",
     alt: "Cup of Sidamo coffee",
   },
   {
@@ -27,8 +26,7 @@ const COFFEES = [
     name: "Harrar",
     meta: "Ethiopia · Medium-dark roast",
     note: "Winey fruit, spice and a bold lingering body.",
-    image:
-      "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=900&q=80",
+    image: "/images/f3.jpg",
     alt: "Freshly poured Harrar coffee",
   },
 ] as const
@@ -94,12 +92,12 @@ export function FeaturedCoffeeSection() {
                   className="relative aspect-[16/10] overflow-hidden md:aspect-[4/3]"
                   style={{ background: "var(--attana-bg-elevated)" }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={coffee.image}
                     alt={coffee.alt}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 240px"
+                    className="object-cover"
                   />
                 </div>
 

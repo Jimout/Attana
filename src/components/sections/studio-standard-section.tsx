@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import Image from "next/image"
 import { useRef, useState } from "react"
 import {
   motion,
@@ -16,38 +17,17 @@ type MediaCell =
 /** Attana coffee mosaic — same 2 / 3 / 2 column layout as the current design */
 const COLUMNS: MediaCell[][] = [
   [
-    {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1559556064-4161b6be179b?auto=format&fit=crop&w=1200&q=80",
-    },
-    {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
-    },
+    { type: "image", src: "/images/1.jpg" },
+    { type: "image", src: "/images/4.jpg" },
   ],
   [
-    {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1400&q=80",
-    },
-    {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1400&q=80",
-    },
-    {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1400&q=80",
-    },
+    { type: "image", src: "/images/3.jpg" },
+    { type: "image", src: "/images/2.jpg" },
+    { type: "image", src: "/images/5.jpg" },
   ],
   [
-    {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1567726843492-df0484bb0b05?auto=format&fit=crop&w=1200&q=80",
-    },
-    {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=1200&q=80",
-    },
+    { type: "image", src: "/images/6.jpg" },
+    { type: "image", src: "/images/7.jpg" },
   ],
 ]
 
@@ -76,13 +56,13 @@ function Cell({ cell }: { cell: MediaCell }) {
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={cell.src}
           alt=""
+          fill
+          sizes="(max-width: 768px) 50vw, 34vw"
+          className="object-cover"
           draggable={false}
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
         />
       )}
     </div>

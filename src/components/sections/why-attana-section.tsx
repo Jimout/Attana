@@ -2,9 +2,6 @@
 
 import { motion } from "motion/react"
 
-const WHY_IMAGE =
-  "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=2400&q=80"
-
 const REASONS = [
   {
     index: "01",
@@ -25,33 +22,8 @@ const REASONS = [
 
 export function WhyAttanaSection() {
   return (
-    <section
-      id="why"
-      className="relative overflow-hidden"
-      style={{ background: "var(--attana-bg)" }}
-      aria-label="Why Attana"
-    >
-      <div className="absolute inset-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={WHY_IMAGE}
-          alt=""
-          aria-hidden
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              linear-gradient(180deg, var(--attana-bg) 0%, rgba(13,13,13,0.35) 28%, rgba(13,13,13,0.5) 100%),
-              linear-gradient(0deg, rgba(13,13,13,0.2), rgba(13,13,13,0.2))
-            `,
-          }}
-        />
-      </div>
-
-      <div className="attana-container relative z-10">
+    <section id="why" className="attana-section" aria-label="Why Attana">
+      <div className="attana-container">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -69,7 +41,6 @@ export function WhyAttanaSection() {
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="attana-heading max-w-[16ch]"
-          style={{ color: "var(--attana-cream)" }}
         >
           Three reasons. One standard.
         </motion.h2>
@@ -80,9 +51,6 @@ export function WhyAttanaSection() {
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.55, delay: 0.05 }}
           className="attana-lede max-w-[32rem]"
-          style={{
-            color: "color-mix(in srgb, var(--attana-cream) 78%, transparent)",
-          }}
         >
           Origin first. Roast with restraint. Source with care.
         </motion.p>
@@ -111,15 +79,13 @@ export function WhyAttanaSection() {
               </p>
               <h3
                 className="mt-5 text-[clamp(1.25rem,2vw,1.5rem)] font-semibold leading-[1.15] tracking-[-0.02em]"
-                style={{ color: "var(--attana-cream)" }}
+                style={{ color: "var(--attana-text)" }}
               >
                 {reason.title}
               </h3>
               <p
                 className="mt-3 max-w-[28ch] text-[15px] leading-[1.55] sm:text-[16px]"
-                style={{
-                  color: "color-mix(in srgb, var(--attana-cream) 72%, transparent)",
-                }}
+                style={{ color: "var(--attana-body)" }}
               >
                 {reason.body}
               </p>

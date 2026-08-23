@@ -28,8 +28,6 @@ export function AboutSection() {
           className="attana-heading max-w-[1100px] text-left"
           style={{
             fontSize: "clamp(1.65rem, 4.2vw, 3.55rem)",
-            textAlign: "justify",
-            textAlignLast: "left",
           }}
         >
           {HEADLINE}

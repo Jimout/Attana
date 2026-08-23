@@ -109,11 +109,6 @@
 }
 
 .wfullImg {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
   object-fit: cover;
 }
 
@@ -156,7 +151,7 @@
   text-transform: uppercase;
   letter-spacing: -0.03em;
   line-height: 0.95;
-  font-size: clamp(56px, 10.5vw, 180px);
+  font-size: clamp(40px, 10.5vw, 180px);
   color: var(--grey);
   transition: color 0.3s;
 }
@@ -199,108 +194,19 @@
   opacity: 0.75;
 }
 
-.mslides {
-  display: contents;
-}
-
-.mslide {
-  position: relative;
-  height: 70svh;
-  margin: 0 var(--pad) 14px;
-  overflow: hidden;
-  display: none;
-}
-
-.mslideImg {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.mslide::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(13, 13, 13, 0.3),
-    rgba(13, 13, 13, 0.65)
-  );
-}
-
-.mslideUi {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px;
-}
-
-.mslideTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.mslideTags {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--grey);
-}
-
-.mslideFoot {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mslideName {
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-  line-height: 0.95;
-  font-size: clamp(40px, 12vw, 76px);
-  color: var(--grey);
-}
-
-.mslideCta {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--grey);
-}
-
-.mslideCta b {
-  color: var(--orange);
-}
-
-.mslide .lbl {
-  color: var(--grey);
-}
-
 @media (max-width: 820px) {
-  .wshow,
-  .count,
   .hint {
-    display: none;
+    top: 72px;
   }
 
-  .mslide {
-    display: block;
+  .count {
+    bottom: clamp(16px, 4vh, 32px);
+    font-size: 12px;
+    padding: 6px 10px;
   }
-}
 
-@media (min-width: 821px) {
-  .mslide {
-    display: none;
+  .wfullTags {
+    font-size: 10px;
+    letter-spacing: 0.12em;
   }
 }

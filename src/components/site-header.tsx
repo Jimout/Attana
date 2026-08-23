@@ -8,7 +8,6 @@ const NAV = [
   { label: "Coffee", href: "#coffee", index: "02" },
   { label: "Origin", href: "#origin", index: "03" },
   { label: "Why", href: "#why", index: "04" },
-  { label: "Contact", href: "#contact", index: "05" },
 ] as const
 
 export function SiteHeader() {

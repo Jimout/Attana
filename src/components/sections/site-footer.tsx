@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import type { ReactNode } from "react"
 import { motion } from "motion/react"
 
@@ -10,7 +11,6 @@ const NAV = [
   { label: "Story", href: "#story" },
   { label: "Coffee", href: "#coffee" },
   { label: "Origin", href: "#origin" },
-  { label: "Contact Us", href: "#contact" },
 ] as const
 
 const TICKER = [
@@ -22,8 +22,7 @@ const TICKER = [
   "From cherry to cup",
 ] as const
 
-const STAGE_IMAGE =
-  "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=2000&q=80"
+const STAGE_IMAGE = "/images/hero.jpg"
 
 function TickerGlyph() {
   return (
@@ -74,10 +73,65 @@ export function SiteFooter() {
   return (
     <footer
       id="contact"
-      className="attana-section overflow-hidden"
+      className="overflow-hidden"
+      style={{ background: "var(--attana-bg)" }}
       aria-label="Footer"
     >
-      <div className="attana-container flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between lg:gap-20">
+      <div className="relative w-full overflow-hidden">
+        <Image
+          src={STAGE_IMAGE}
+          alt=""
+          aria-hidden
+          fill
+          sizes="100vw"
+          className="scale-105 object-cover"
+        />
+        <div className="absolute inset-0 bg-[var(--attana-bg)]/35" />
+
+        <div
+          className="relative z-10 flex items-center justify-center py-8 text-center lg:py-10"
+          style={{ paddingInline: "var(--attana-pad-x)" }}
+        >
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="attana-heading max-w-[16ch] normal-case"
+            style={{
+              fontSize: "clamp(1.5rem, 4vw, 2.5rem)",
+              textTransform: "none",
+              fontWeight: 600,
+            }}
+          >
+            Brew the story.
+          </motion.h2>
+        </div>
+      </div>
+
+      <div
+        className="relative overflow-hidden border-y py-3.5"
+        style={{
+          borderColor: "var(--attana-line)",
+          background: "var(--attana-bg)",
+        }}
+      >
+        <div
+          className={`${styles.tickerTrack} flex w-max items-center whitespace-nowrap text-[13px] font-medium tracking-[0.02em] sm:text-[14px]`}
+          style={{ color: "var(--attana-body)" }}
+        >
+          {loop.map((item, i) => (
+            <span key={`${item}-${i}`} className="inline-flex items-center">
+              <TickerGlyph />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="attana-container flex flex-col gap-8 pt-8 pb-0 lg:flex-row lg:items-start lg:justify-between lg:gap-16 lg:pt-10"
+      >
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -87,7 +141,7 @@ export function SiteFooter() {
         >
           <a
             href="#top"
-            className="text-[clamp(2.5rem,5vw,3.75rem)] leading-none tracking-[-0.02em]"
+            className="text-[clamp(2rem,4vw,3rem)] leading-none tracking-[-0.02em]"
             style={{
               fontFamily: "var(--font-dm-serif), Georgia, serif",
               color: "var(--attana-text)",
@@ -95,11 +149,11 @@ export function SiteFooter() {
           >
             Attana
           </a>
-          <p className="attana-lede mt-5 max-w-[34ch]">
+          <p className="attana-lede mt-3 max-w-[34ch]">
             Coffee shaped by altitude, craft and the place it comes from. From
             Ethiopia, with character.
           </p>
-          <div className="mt-7 flex items-center gap-3">
+          <div className="mt-5 flex items-center gap-3">
             <SocialIcon label="LinkedIn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
@@ -151,7 +205,7 @@ export function SiteFooter() {
               >
                 <a
                   href={item.href}
-                  className="block py-3.5 text-[15px] font-medium transition hover:opacity-70 sm:text-[16px]"
+                  className="block py-2.5 text-[15px] font-medium transition hover:opacity-70 sm:text-[16px]"
                   style={{ color: "var(--attana-text)" }}
                 >
                   {item.label}
@@ -163,69 +217,15 @@ export function SiteFooter() {
       </div>
 
       <div
-        className="relative overflow-hidden border-y py-3.5"
-        style={{
-          borderColor: "var(--attana-line)",
-          background: "var(--attana-bg)",
-        }}
+        className="pb-6 pt-6 sm:pb-8 sm:pt-7"
+        style={{ paddingInline: "var(--attana-pad-x)" }}
       >
-        <div
-          className={`${styles.tickerTrack} flex w-max items-center whitespace-nowrap text-[13px] font-medium tracking-[0.02em] sm:text-[14px]`}
-          style={{ color: "var(--attana-body)" }}
+        <p
+          className="m-0 text-[13px] font-medium sm:text-[14px] md:text-[16px]"
+          style={{ color: "var(--attana-muted)" }}
         >
-          {loop.map((item, i) => (
-            <span key={`${item}-${i}`} className="inline-flex items-center">
-              <TickerGlyph />
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="relative min-h-[min(10vh,96px)] w-full overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={STAGE_IMAGE}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full scale-105 object-cover"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-[var(--attana-bg)]/35" />
-
-        <div className="relative z-10 flex min-h-[min(10vh,96px)] flex-col">
-          <div
-            className="flex flex-1 items-center justify-center py-3 text-center sm:py-4"
-            style={{ paddingInline: "var(--attana-pad-x)" }}
-          >
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="attana-heading max-w-[16ch] normal-case"
-              style={{
-                fontSize: "clamp(1.5rem, 4vw, 2.5rem)",
-                textTransform: "none",
-                fontWeight: 600,
-              }}
-            >
-              Brew the story.
-            </motion.h2>
-          </div>
-
-          <div
-            className="pb-6 sm:pb-7"
-            style={{ paddingInline: "var(--attana-pad-x)" }}
-          >
-            <p
-              className="m-0 text-[13px] font-medium sm:text-[14px] md:text-[16px]"
-              style={{ color: "var(--attana-muted)" }}
-            >
-              © 2026 Attana. All rights reserved.
-            </p>
-          </div>
-        </div>
+          © 2026 Attana. All rights reserved.
+        </p>
       </div>
     </footer>
   )

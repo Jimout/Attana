@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
@@ -13,7 +14,7 @@ const STAGES = [
     name: "Highlands",
     title: ["ETHIOPIAN", "HIGHLANDS"],
     tags: ["Altitude", "Heirloom", "Terroir"],
-    img: "https://images.unsplash.com/photo-1559556064-4161b6be179b?auto=format&fit=crop&w=1920&q=80",
+    img: "/images/origin1.jpg",
     alt: "Ethiopian coffee highlands at altitude",
   },
   {
@@ -21,7 +22,7 @@ const STAGES = [
     name: "Farmers",
     title: ["SMALLHOLDER", "FARMERS"],
     tags: ["Hand-picked", "Cooperatives", "Craft"],
-    img: "https://images.unsplash.com/photo-1722962883780-8806c3ab546b?auto=format&fit=crop&w=1920&q=80",
+    img: "/images/origin2.jpg",
     alt: "Smallholder farmers picking coffee cherries",
   },
   {
@@ -29,7 +30,7 @@ const STAGES = [
     name: "Cherry to cup",
     title: ["CHERRY", "→ CUP"],
     tags: ["Wash", "Dry", "Roast"],
-    img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=1920&q=80",
+    img: "/images/origin3.jpg",
     alt: "Coffee journey from cherry to cup",
   },
 ] as const
@@ -51,15 +52,18 @@ export function FeaturedWorkSection() {
     gsap.registerPlugin(ScrollTrigger)
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const desk = window.innerWidth > 820
     const show = showRef.current
     const trackL = trackLRef.current
     const trackR = trackRRef.current
 
-    if (!desk || !show || !trackL || !trackR || reduced) return
+    if (!show || !trackL || !trackR || reduced) return
 
     const step = 100 / N
     gsap.set(trackR, { yPercent: -step * (N - 1) })
+
+    const isTouch =
+      window.matchMedia("(hover: none), (pointer: coarse)").matches ||
+      "ontouchstart" in window
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -67,7 +71,11 @@ export function FeaturedWorkSection() {
         start: "top top",
         end: `+=${N * 100}%`,
         pin: true,
-        scrub: 0.6,
+        scrub: isTouch ? 0.35 : 0.6,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        // iOS Safari: transform pin is more reliable than fixed
+        pinType: isTouch ? "transform" : "fixed",
         onUpdate(self) {
           const i = Math.min(N - 1, Math.floor(self.progress * (N - 1) + 0.5))
           setCur(i)
@@ -96,8 +104,13 @@ export function FeaturedWorkSection() {
 
     const onResize = () => ScrollTrigger.refresh()
     window.addEventListener("resize", onResize)
+    // Recalc after layout/fonts — critical on mobile viewport chrome
+    const raf = requestAnimationFrame(() => ScrollTrigger.refresh())
+    const t = window.setTimeout(() => ScrollTrigger.refresh(), 300)
 
     return () => {
+      cancelAnimationFrame(raf)
+      window.clearTimeout(t)
       window.removeEventListener("resize", onResize)
       tl.scrollTrigger?.kill()
       tl.kill()
@@ -178,37 +191,6 @@ export function FeaturedWorkSection() {
           </div>
         </div>
       </div>
-
-      <div className={styles.mslides} id="mslides">
-        {STAGES.map((p, i) => (
-          <div
-            key={p.id}
-            className={styles.mslide}
-            aria-label={p.name}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              className={styles.mslideImg}
-              src={p.img}
-              alt={p.alt}
-              loading="lazy"
-            />
-            <span className={styles.mslideUi}>
-              <span className={styles.mslideTop}>
-                <span className={`${styles.lbl} ${styles.lblPlain} ${styles.num}`}>
-                  {padIndex(i)} / 0{N}
-                </span>
-                <span className={styles.mslideTags}>
-                  {p.tags.slice(0, 2).join(" · ")}
-                </span>
-              </span>
-              <span className={styles.mslideFoot}>
-                <span className={styles.mslideName}>{p.name}</span>
-              </span>
-            </span>
-          </div>
-        ))}
-      </div>
     </section>
   )
 }
@@ -229,12 +211,13 @@ function StagePanel({
       role="img"
       aria-label={stage.alt}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         className={styles.wfullImg}
         src={stage.img}
         alt={stage.alt}
-        loading={index ? "lazy" : "eager"}
+        fill
+        sizes="100vw"
+        priority={index === 0}
       />
       <span className={styles.wfullUi}>
         <span className={styles.wfullTags}>
