@@ -217,7 +217,7 @@ export function SiteFooter() {
       </div>
 
       <div
-        className="pb-6 pt-6 sm:pb-8 sm:pt-7"
+        className="flex flex-col gap-2 pb-6 pt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pb-8 sm:pt-7"
         style={{ paddingInline: "var(--attana-pad-x)" }}
       >
         <p
@@ -225,6 +225,13 @@ export function SiteFooter() {
           style={{ color: "var(--attana-muted)" }}
         >
           © 2026 Attana. All rights reserved.
+        </p>
+        <p
+          className="m-0 text-[13px] font-medium sm:text-[14px] md:text-[16px]"
+          style={{ color: "var(--attana-muted)" }}
+        >
+          Made by{" "}
+          <span style={{ color: "var(--attana-accent)" }}>Leseb Tech Lab</span>
         </p>
       </div>
     </footer>
