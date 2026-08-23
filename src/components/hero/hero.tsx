@@ -9,8 +9,8 @@ export function Hero() {
   return (
     <section
       id="top"
-      className="relative h-svh min-h-[640px] w-full overflow-hidden"
-      style={{ background: "var(--attana-bg)" }}
+      className="relative h-svh min-h-[640px] w-full overflow-x-clip overflow-y-hidden"
+      style={{ background: "var(--attana-bg)", touchAction: "pan-y" }}
       aria-label="Attana Coffee hero"
     >
       <motion.div
@@ -25,6 +25,7 @@ export function Hero() {
           alt="Ethiopian coffee highlands"
           className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
+          fetchPriority="high"
         />
       </motion.div>
 
@@ -32,8 +33,8 @@ export function Hero() {
         className="absolute inset-0"
         style={{
           background: `
-            linear-gradient(180deg, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.2) 38%, rgba(13,13,13,0.72) 72%, var(--attana-bg) 100%),
-            linear-gradient(90deg, rgba(13,13,13,0.55) 0%, transparent 55%)
+            linear-gradient(180deg, rgba(13,13,13,0.35) 0%, rgba(13,13,13,0.12) 40%, rgba(13,13,13,0.55) 75%, var(--attana-bg) 100%),
+            linear-gradient(90deg, rgba(13,13,13,0.35) 0%, transparent 55%)
           `,
         }}
       />
@@ -76,7 +77,7 @@ export function Hero() {
           className="mt-5 max-w-[34rem] text-[15px] leading-[1.55] sm:text-[16px]"
           style={{
             fontFamily: "var(--font-mona), 'Helvetica Neue', Arial, sans-serif",
-            color: "color-mix(in srgb, var(--attana-cream) 78%, transparent)",
+            color: "color-mix(in srgb, var(--attana-cream) 85%, transparent)",
           }}
         >
           Coffee shaped by altitude, craft and the place it comes from.

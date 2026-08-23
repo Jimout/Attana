@@ -4,7 +4,6 @@
 @import "@fontsource-variable/mona-sans/standard.css";
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
-@import "@fontsource/smooch/400.css";
 
 /* Limit Tailwind/Turbopack CSS scanning to app source — avoid .firecrawl HTML locks */
 @source "../**/*.{js,ts,jsx,tsx,mdx}";
@@ -18,10 +17,8 @@
     --font-serif: var(--font-dm-serif);
     --font-dm-serif: var(--font-dm-serif);
     --font-inter: var(--font-inter);
-    --font-caveat: var(--font-caveat);
     --font-mona: "Mona Sans Variable", "Mona Sans", "Helvetica Neue", Arial, sans-serif;
     --font-plex: "IBM Plex Mono", ui-monospace, monospace;
-    --font-smooch: "Smooch", "Segoe Script", cursive;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -156,20 +153,28 @@
     background: var(--attana-bg);
     color: var(--attana-text);
     font-family: var(--font-mona), "Helvetica Neue", Arial, sans-serif;
+    overflow-x: clip;
   }
   html {
     @apply font-sans;
-    scroll-behavior: smooth;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
+  main {
+    overflow-x: clip;
+    width: 100%;
   }
 }
 
 @layer components {
   .attana-section {
     position: relative;
-    overflow: hidden;
+    overflow-x: clip;
     background: var(--attana-bg);
     color: var(--attana-text);
     font-family: var(--font-mona), "Helvetica Neue", Arial, sans-serif;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 800px;
   }
 
   .attana-container {

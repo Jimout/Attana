@@ -13,6 +13,7 @@
   --font: var(--font-mona), "Helvetica Neue", Arial, sans-serif;
 
   position: relative;
+  overflow-x: clip;
   background: var(--black);
   color: var(--grey);
   font-family: var(--font);
@@ -60,7 +61,9 @@
   position: relative;
   height: 100svh;
   overflow: hidden;
+  overflow-x: clip;
   background: var(--black);
+  touch-action: pan-y;
 }
 
 .wcol {
@@ -118,7 +121,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(13, 13, 13, 0.42);
+  background: rgba(13, 13, 13, 0.28);
 }
 
 .wfullUi {

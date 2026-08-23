@@ -99,6 +99,7 @@ export function FeaturedCoffeeSection() {
                     src={coffee.image}
                     alt={coffee.alt}
                     className="h-full w-full object-cover"
+                    loading="lazy"
                   />
                 </div>
 

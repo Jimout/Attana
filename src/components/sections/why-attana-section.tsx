@@ -38,13 +38,14 @@ export function WhyAttanaSection() {
           alt=""
           aria-hidden
           className="h-full w-full object-cover"
+          loading="lazy"
         />
         <div
           className="absolute inset-0"
           style={{
             background: `
-              linear-gradient(180deg, var(--attana-bg) 0%, rgba(13,13,13,0.55) 28%, rgba(13,13,13,0.72) 100%),
-              linear-gradient(0deg, rgba(13,13,13,0.35), rgba(13,13,13,0.35))
+              linear-gradient(180deg, var(--attana-bg) 0%, rgba(13,13,13,0.35) 28%, rgba(13,13,13,0.5) 100%),
+              linear-gradient(0deg, rgba(13,13,13,0.2), rgba(13,13,13,0.2))
             `,
           }}
         />

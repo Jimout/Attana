@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useRef, useState } from "react"
 import {
@@ -13,7 +13,7 @@ type MediaCell =
   | { type: "video"; src: string; poster?: string }
   | { type: "image"; src: string }
 
-/** Attana coffee mosaic â€” same 2 / 3 / 2 column layout as the current design */
+/** Attana coffee mosaic — same 2 / 3 / 2 column layout as the current design */
 const COLUMNS: MediaCell[][] = [
   [
     {
@@ -81,6 +81,7 @@ function Cell({ cell }: { cell: MediaCell }) {
           src={cell.src}
           alt=""
           draggable={false}
+          loading="lazy"
           className="absolute inset-0 h-full w-full object-cover"
         />
       )}
@@ -204,8 +205,8 @@ export function StudioStandardSection() {
     <section
       ref={containerRef}
       id="lots"
-      className="relative bg-[var(--attana-bg)]"
-      style={{ height: "300vh" }}
+      className="relative bg-[var(--attana-bg)] overflow-x-clip"
+      style={{ height: "300vh", touchAction: "pan-y" }}
       aria-label="3 origins, one craft, pure character"
       data-scroll-progress
     >

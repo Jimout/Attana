@@ -1,14 +1,25 @@
-import type { NextConfig } from "next";
-import path from "path";
+import type { NextConfig } from "next"
+import path from "path"
 
 const nextConfig: NextConfig = {
   images: {
-    formats: ["image/webp", "image/avif"],
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [96, 128, 256, 384],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "catalinvintila.design",
+      },
+    ],
   },
-  // Keep Turbopack rooted in this app (not Desktop) so scrapes outside src stay out of the graph
   turbopack: {
     root: path.join(__dirname),
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

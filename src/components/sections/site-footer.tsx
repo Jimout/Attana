@@ -182,19 +182,20 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="relative min-h-[min(28vh,280px)] w-full overflow-hidden">
+      <div className="relative min-h-[min(10vh,96px)] w-full overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={STAGE_IMAGE}
           alt=""
           aria-hidden
-          className="absolute inset-0 h-full w-full scale-105 object-cover grayscale contrast-[1.05] brightness-[0.55]"
+          className="absolute inset-0 h-full w-full scale-105 object-cover"
+          loading="lazy"
         />
-        <div className="absolute inset-0 bg-[var(--attana-bg)]/50" />
+        <div className="absolute inset-0 bg-[var(--attana-bg)]/35" />
 
-        <div className="relative z-10 flex min-h-[min(28vh,280px)] flex-col">
+        <div className="relative z-10 flex min-h-[min(10vh,96px)] flex-col">
           <div
-            className="flex flex-1 items-center justify-center py-10 text-center sm:py-12"
+            className="flex flex-1 items-center justify-center py-3 text-center sm:py-4"
             style={{ paddingInline: "var(--attana-pad-x)" }}
           >
             <motion.h2
@@ -204,7 +205,7 @@ export function SiteFooter() {
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               className="attana-heading max-w-[16ch] normal-case"
               style={{
-                fontSize: "clamp(2.25rem, 6vw, 4.5rem)",
+                fontSize: "clamp(1.5rem, 4vw, 2.5rem)",
                 textTransform: "none",
                 fontWeight: 600,
               }}
