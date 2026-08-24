@@ -38,7 +38,7 @@ const STAGES = [
   },
 ] as const
 
-const N = STAGES.length
+const N: number = STAGES.length
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
