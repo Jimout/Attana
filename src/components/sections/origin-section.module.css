@@ -28,13 +28,31 @@
   font-variant-numeric: tabular-nums;
 }
 
+.wshow {
+  position: relative;
+  /* svh fallback; dvh is stabler on mobile URL-bar (avoids pin spacer black gaps) */
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
+  overflow-x: clip;
+  background: var(--black);
+  touch-action: pan-y;
+}
+
 .head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   color: var(--mut);
-  padding: var(--attana-section-pt) var(--pad) clamp(1.5rem, 3vh, 2.75rem);
+  padding: clamp(1rem, 3vh, 1.5rem) var(--pad);
+  pointer-events: none;
 }
+
 
 .lbl {
   font-family: var(--font-plex), ui-monospace, monospace;
@@ -55,15 +73,6 @@
 
 .lblPlain::before {
   content: none;
-}
-
-.wshow {
-  position: relative;
-  height: 100svh;
-  overflow: hidden;
-  overflow-x: clip;
-  background: var(--black);
-  touch-action: pan-y;
 }
 
 .wshow:hover .wfullName {

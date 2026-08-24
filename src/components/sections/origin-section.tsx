@@ -97,10 +97,9 @@ export function OriginSection() {
 
     if (reduced) return
 
-    // Pin length: classic (N-1) viewports on touch — ends soon after 03 locks (no long black)
-    const endDistance = isCoarse
-      ? `+=${(N - 1) * 100}%`
-      : `+=${(N + (N - 1)) * 70}%`
+    // Pixel end from stage height — stable on mobile (avoids %/svh pin-spacer drift)
+    const endDistance = () =>
+      `+=${Math.round(show.offsetHeight * (isCoarse ? N - 1 : (N + (N - 1)) * 0.7))}`
     const scrubAmt = isCoarse ? 0.05 : 0.45
 
     const st = ScrollTrigger.create({
@@ -109,7 +108,7 @@ export function OriginSection() {
       end: endDistance,
       pin: true,
       scrub: scrubAmt,
-      anticipatePin: 1,
+      anticipatePin: isCoarse ? 0 : 1,
       invalidateOnRefresh: !isCoarse,
       pinType: "fixed",
       onUpdate(self) {
@@ -161,17 +160,17 @@ export function OriginSection() {
       className={styles.work}
       aria-label="Origin and Craft"
     >
-      <div className={styles.head}>
-        <span className={`${styles.lbl} ${styles.lblPlain}`}>
-          <span className="attana-label-index">(03)</span>
-          <span style={{ marginLeft: 12 }}>Origin / Craft</span>
-        </span>
-        <span className={`${styles.lbl} ${styles.lblPlain} ${styles.num}`}>
-          03 — stages
-        </span>
-      </div>
-
       <div ref={showRef} className={styles.wshow} id="wshow">
+        <div className={styles.head}>
+          <span className={`${styles.lbl} ${styles.lblPlain}`}>
+            <span className="attana-label-index">(03)</span>
+            <span style={{ marginLeft: 12 }}>Origin / Craft</span>
+          </span>
+          <span className={`${styles.lbl} ${styles.lblPlain} ${styles.num}`}>
+            03 — stages
+          </span>
+        </div>
+
         <span className={`${styles.count} ${styles.num}`}>
           <b>{padIndex(cur)}</b> / 03
         </span>
