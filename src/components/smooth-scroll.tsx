@@ -55,6 +55,16 @@ function scrollToSection(id: string, lenis?: LenisLike | null) {
     return
   }
 
+  // Prefer ScrollTrigger start when the section itself is the pin trigger (e.g. #lots)
+  const trigger = ScrollTrigger.getAll().find((st) => st.trigger === el)
+  if (trigger && typeof trigger.start === "number") {
+    const y = Math.max(0, trigger.start + HEADER_OFFSET)
+    if (lenis) lenis.scrollTo(y, { immediate: true })
+    else window.scrollTo({ top: y, left: 0, behavior: "auto" })
+    return
+  }
+
+  // Nested pins (Origin pin is inside #origin) — land on the section heading
   if (lenis) {
     lenis.scrollTo(el, { offset: HEADER_OFFSET, immediate: true })
     return
@@ -72,7 +82,11 @@ function rememberSection(id: string) {
   }
   if (id === "top") {
     if (window.location.hash) {
-      history.replaceState(null, "", window.location.pathname + window.location.search)
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      )
     }
     return
   }
@@ -82,18 +96,16 @@ function rememberSection(id: string) {
   }
 }
 
-function settleScroll(lenis?: LenisLike | null) {
-  const id = readTargetId()
+function settleScroll(id: string, lenis?: LenisLike | null) {
   ScrollTrigger.refresh()
   scrollToSection(id, lenis)
-  // Second pass after pin spacers / images recalculate
   requestAnimationFrame(() => {
     ScrollTrigger.refresh()
     scrollToSection(id, lenis)
   })
 }
 
-function watchActiveSection() {
+function watchActiveSection(canRemember: () => boolean) {
   const elements = SECTION_IDS.map((id) => document.getElementById(id)).filter(
     (el): el is HTMLElement => Boolean(el),
   )
@@ -101,6 +113,7 @@ function watchActiveSection() {
 
   const observer = new IntersectionObserver(
     (entries) => {
+      if (!canRemember()) return
       const visible = entries
         .filter((e) => e.isIntersecting)
         .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
@@ -110,9 +123,8 @@ function watchActiveSection() {
     },
     {
       root: null,
-      // Bias toward the section occupying the upper mid viewport
-      rootMargin: "-20% 0px -45% 0px",
-      threshold: [0.08, 0.2, 0.35, 0.5],
+      rootMargin: "-22% 0px -48% 0px",
+      threshold: [0.1, 0.25, 0.4, 0.55],
     },
   )
 
@@ -130,14 +142,24 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     gsap.registerPlugin(ScrollTrigger)
     ScrollTrigger.config({ ignoreMobileResize: true })
 
-    // Kill browser's wrong restored Y before pins inflate the page
+    // Prevent browser restoring a stale Y before pins exist
     window.scrollTo(0, 0)
 
-    let userMoved = false
+    const targetId = readTargetId()
+    rememberSection(targetId)
+
     let cancelled = false
+    let settling = true
+    let userMoved = false
+    let watching = false
     let stopWatch = () => {}
+    const timers: number[] = []
+
+    const canRemember = () => !cancelled && !settling && watching
 
     const markUserMoved = () => {
+      // Ignore trackpad noise while we are still restoring position
+      if (settling) return
       userMoved = true
     }
     window.addEventListener("wheel", markUserMoved, { passive: true })
@@ -146,12 +168,24 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
     const safeSettle = (lenis?: LenisLike | null) => {
       if (cancelled || userMoved) return
-      settleScroll(lenis)
+      settleScroll(targetId, lenis)
+    }
+
+    const finishSettling = (lenis?: LenisLike | null) => {
+      if (cancelled) return
+      safeSettle(lenis)
+      settling = false
+      if (!watching) {
+        watching = true
+        stopWatch = watchActiveSection(canRemember)
+      }
     }
 
     const onNavClick = (e: MouseEvent, lenis?: LenisLike | null) => {
       const target = e.target as HTMLElement | null
-      const anchor = target?.closest?.("a[href^='#']") as HTMLAnchorElement | null
+      const anchor = target?.closest?.(
+        "a[href^='#']",
+      ) as HTMLAnchorElement | null
       if (!anchor) return
       const href = anchor.getAttribute("href")
       if (!href || href === "#") return
@@ -159,6 +193,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       const el = document.getElementById(id)
       if (!el) return
       e.preventDefault()
+      settling = false
       rememberSection(id)
       if (lenis) {
         lenis.scrollTo(el, { offset: HEADER_OFFSET })
@@ -169,6 +204,18 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       }
     }
 
+    const scheduleSettles = (lenis?: LenisLike | null) => {
+      // Multiple passes: pins (Origin / mosaic) register after first paint
+      ;[80, 250, 500, 900].forEach((ms, i, arr) => {
+        timers.push(
+          window.setTimeout(() => {
+            if (i === arr.length - 1) finishSettling(lenis)
+            else safeSettle(lenis)
+          }, ms),
+        )
+      })
+    }
+
     const coarse = window.matchMedia("(hover: none), (pointer: coarse)").matches
 
     if (reduced || coarse) {
@@ -176,18 +223,11 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       window.addEventListener("resize", onResize)
       const onClick = (e: MouseEvent) => onNavClick(e, null)
       document.addEventListener("click", onClick)
-
-      const boot = window.setTimeout(() => {
-        safeSettle(null)
-        if (!cancelled) stopWatch = watchActiveSection()
-      }, 50)
-
-      const retry = window.setTimeout(() => safeSettle(null), 350)
+      scheduleSettles(null)
 
       return () => {
         cancelled = true
-        window.clearTimeout(boot)
-        window.clearTimeout(retry)
+        timers.forEach((id) => window.clearTimeout(id))
         window.removeEventListener("resize", onResize)
         window.removeEventListener("wheel", markUserMoved)
         window.removeEventListener("touchstart", markUserMoved)
@@ -221,17 +261,11 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     const onClick = (e: MouseEvent) => onNavClick(e, lenis)
     document.addEventListener("click", onClick)
 
-    const boot = window.setTimeout(() => {
-      safeSettle(lenis)
-      if (!cancelled) stopWatch = watchActiveSection()
-    }, 50)
-
-    const retry = window.setTimeout(() => safeSettle(lenis), 350)
+    scheduleSettles(lenis)
 
     return () => {
       cancelled = true
-      window.clearTimeout(boot)
-      window.clearTimeout(retry)
+      timers.forEach((id) => window.clearTimeout(id))
       document.removeEventListener("click", onClick)
       window.removeEventListener("resize", onResize)
       window.removeEventListener("wheel", markUserMoved)

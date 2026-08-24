@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
@@ -16,6 +15,7 @@ const STAGES = [
     tags: ["Altitude", "Heirloom", "Terroir"],
     img: "/images/origin/origin1.jpg",
     alt: "Ethiopian coffee highlands at altitude",
+    objectPosition: "center center",
   },
   {
     id: "farmers",
@@ -24,6 +24,8 @@ const STAGES = [
     tags: ["Hand-picked", "Cooperatives", "Craft"],
     img: "/images/origin/origin2.jpg",
     alt: "Smallholder farmers picking coffee cherries",
+    // Subject sits on the right — bias crop so the hand stays in frame
+    objectPosition: "78% center",
   },
   {
     id: "journey",
@@ -32,6 +34,7 @@ const STAGES = [
     tags: ["Wash", "Dry", "Roast"],
     img: "/images/origin/origin3.jpg",
     alt: "Coffee journey from cherry to cup",
+    objectPosition: "center center",
   },
 ] as const
 
@@ -59,53 +62,63 @@ export function OriginSection() {
     if (!show || !trackL || !trackR || reduced) return
 
     const step = 100 / N
-    gsap.set(trackR, { yPercent: -step * (N - 1) })
+    const travel = step * (N - 1) // e.g. 66.666… for 3 stages
+
+    /**
+     * Map raw scroll 0–1 → stage position 0..(N-1) with a dwell on each stage
+     * so the second image actually pauses instead of only flashing mid-scrub.
+     */
+    const stageFromScroll = (p: number) => {
+      const holdW = 1.2
+      const moveW = 1
+      const total = N * holdW + (N - 1) * moveW
+      let u = gsap.utils.clamp(0, 1, p) * total
+
+      for (let i = 0; i < N; i++) {
+        if (u <= holdW) return i
+        u -= holdW
+        if (i < N - 1) {
+          if (u <= moveW) return i + u / moveW
+          u -= moveW
+        }
+      }
+      return N - 1
+    }
+
+    const applyProgress = (p: number) => {
+      const stage = stageFromScroll(p) // 0 .. N-1 (fractional during wipes)
+      const t = (N === 1 ? 0 : stage / (N - 1)) as number
+      // One progress drives both tracks so the split image never desyncs
+      gsap.set(trackL, { yPercent: -travel * t })
+      gsap.set(trackR, { yPercent: -travel * (1 - t) })
+      setCur(Math.min(N - 1, Math.round(stage)))
+    }
+
+    applyProgress(0)
 
     const isTouch =
       window.matchMedia("(hover: none), (pointer: coarse)").matches ||
       "ontouchstart" in window
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: show,
-        start: "top top",
-        // Shorter pin distance = stages advance with less scrolling
-        end: `+=${N * 55}%`,
-        pin: true,
-        scrub: isTouch ? 0.2 : 0.35,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-        // iOS Safari: transform pin is more reliable than fixed
-        pinType: isTouch ? "transform" : "fixed",
-        onUpdate(self) {
-          const i = Math.min(N - 1, Math.floor(self.progress * (N - 1) + 0.5))
-          setCur(i)
-        },
+    // Extra scroll length so each hold + wipe has room (3 holds + 2 moves)
+    const scrollBeats = N + (N - 1)
+
+    const st = ScrollTrigger.create({
+      trigger: show,
+      start: "top top",
+      end: `+=${scrollBeats * 55}%`,
+      pin: true,
+      scrub: isTouch ? 0.3 : 0.45,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      pinType: isTouch ? "transform" : "fixed",
+      onUpdate(self) {
+        applyProgress(self.progress)
       },
     })
 
-    for (let i = 0; i < N - 1; i++) {
-      tl.to({}, { duration: 0.25 })
-        .to(trackL, {
-          yPercent: -step * (i + 1),
-          duration: 0.85,
-          ease: "power3.inOut",
-        })
-        .to(
-          trackR,
-          {
-            yPercent: -step * (N - 1 - (i + 1)),
-            duration: 0.85,
-            ease: "power3.inOut",
-          },
-          "<",
-        )
-    }
-    tl.to({}, { duration: 0.25 })
-
     const onResize = () => ScrollTrigger.refresh()
     window.addEventListener("resize", onResize)
-    // Recalc after layout/fonts — critical on mobile viewport chrome
     const raf = requestAnimationFrame(() => ScrollTrigger.refresh())
     const t = window.setTimeout(() => ScrollTrigger.refresh(), 300)
 
@@ -113,8 +126,7 @@ export function OriginSection() {
       cancelAnimationFrame(raf)
       window.clearTimeout(t)
       window.removeEventListener("resize", onResize)
-      tl.scrollTrigger?.kill()
-      tl.kill()
+      st.kill()
       gsap.set([trackL, trackR], { clearProps: "transform" })
     }
   }, [])
@@ -212,13 +224,15 @@ function StagePanel({
       role="img"
       aria-label={stage.alt}
     >
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         className={styles.wfullImg}
         src={stage.img}
         alt={stage.alt}
-        fill
-        sizes="100vw"
-        priority={index === 0}
+        draggable={false}
+        decoding="async"
+        loading={index === 0 ? "eager" : "lazy"}
+        style={{ objectPosition: stage.objectPosition }}
       />
       <span className={styles.wfullUi}>
         <span className={styles.wfullTags}>

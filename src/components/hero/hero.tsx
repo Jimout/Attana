@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { motion } from "motion/react"
 
 const HERO_IMAGE = "/images/hero/hero.jpg"
@@ -19,14 +18,14 @@ export function Hero() {
         animate={{ scale: 1 }}
         transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={HERO_IMAGE}
           alt="Ethiopian coffee highlands"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
+          fetchPriority="high"
+          decoding="async"
         />
       </motion.div>
 

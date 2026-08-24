@@ -65,13 +65,17 @@ export function SiteHeader() {
           <a
             href="#top"
             onClick={() => setOpen(false)}
-            className="relative z-[60] shrink-0 text-[18px] leading-none tracking-[-0.02em] sm:text-[20px]"
-            style={{
-              fontFamily: "var(--font-dm-serif), Georgia, serif",
-              color: "var(--attana-cream)",
-            }}
+            className="relative z-[60] inline-flex shrink-0 items-center transition hover:opacity-80"
+            aria-label="Attana home"
           >
-            Attana
+            <img
+              src="/images/logos/NavLogo.png"
+              alt="Attana"
+              width={1881}
+              height={836}
+              className="h-10 w-auto sm:h-11"
+              decoding="async"
+            />
           </a>
 
           <nav

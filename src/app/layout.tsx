@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   title: "Attana Coffee | From Ethiopia, with character",
   description:
     "Coffee shaped by altitude, craft and the place it comes from. Discover Attana, a contemporary expression of Ethiopian coffee.",
+  icons: {
+    icon: [{ url: "/images/logos/FavIcon.png", type: "image/png" }],
+    apple: [{ url: "/images/logos/FavIcon.png", type: "image/png" }],
+    shortcut: "/images/logos/FavIcon.png",
+  },
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
