@@ -45,10 +45,10 @@ const N: number = STAGES.length
 /** Desktop runway: 1 sticky + (N-1) travel */
 const SCROLL_VH_DESKTOP = N
 /**
- * Tiny phone: travel ≈ one viewport per hold/wipe unit
- * (N holds + (N-1) wipes) so 01, 02, 03 each stop equally, then exit.
+ * Tiny phone: shorter runway so 03 doesn’t crawl.
+ * Travel ≈ 3.25 vh for hold/wipe map below.
  */
-const SCROLL_VH_PHONE = 1 + N + (N - 1)
+const SCROLL_VH_PHONE = 4.25
 /** Very small devices only — must match CSS */
 const PHONE_MQ = "(max-width: 480px)"
 
@@ -93,19 +93,20 @@ export function OriginSection() {
 
     /**
      * Desktop: Catalin hold/wipe (unchanged).
-     * Tiny phone: equal hold + equal wipe for every stage including 03,
-     * so 01 / 02 / 03 each get the same stop, then the section ends.
+     * Tiny phone: longer 01, normal 02, short 03 + shorter runway.
      */
     const stageFromScroll = (p: number) => {
       if (N <= 1) return 0
-      const phone = isPhone()
-      const holdW = phone ? 1 : isCoarse ? 1.2 : 1.4
       const moveW = 1
-      const total = N * holdW + (N - 1) * moveW
+      const holds = isPhone()
+        ? [1.55, 1.1, 0.55]
+        : Array.from({ length: N }, () => (isCoarse ? 1.2 : 1.4))
+      const total = holds.reduce((a, b) => a + b, 0) + (N - 1) * moveW
       let u = gsap.utils.clamp(0, 1, p) * total
       for (let i = 0; i < N; i++) {
-        if (u <= holdW) return i
-        u -= holdW
+        const h = holds[i]!
+        if (u <= h) return i
+        u -= h
         if (i < N - 1) {
           if (u <= moveW) return i + u / moveW
           u -= moveW
