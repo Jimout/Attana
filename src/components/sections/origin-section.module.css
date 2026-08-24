@@ -258,3 +258,31 @@
     letter-spacing: 0.12em;
   }
 }
+
+/*
+  Very small phones: same sticky scrub as desktop — only drop the
+  vertical seam. Left column becomes the full stage image.
+*/
+@media (max-width: 480px) {
+  .wcolR {
+    display: none;
+  }
+
+  .wcolL {
+    left: 0;
+    width: 100%;
+  }
+
+  .wfull {
+    width: 100%;
+    left: 0;
+  }
+
+  .wfullName {
+    font-size: clamp(36px, 11vw, 64px);
+  }
+
+  .wfullTags {
+    white-space: normal;
+  }
+}

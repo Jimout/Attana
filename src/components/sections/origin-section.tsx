@@ -44,11 +44,9 @@ const STAGES = [
 const N: number = STAGES.length
 /**
  * Parent = 1 sticky viewport + (N-1) scrub travel.
- * Keep this exact — taller runway makes 03 linger after the wipe.
+ * Exact height keeps exit clean after the last stage hold (no empty tail).
  */
 const SCROLL_VH = N
-/** Share of scrub kept on stage 01 at the top of the range (same up & down). */
-const INTRO_HOLD = 0.14
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -76,17 +74,25 @@ export function OriginSection() {
     if (!scroller || !show || !trackL || !trackR) return
 
     /**
-     * Symmetric along the scroll axis (same positions up and down):
-     * - First INTRO_HOLD of progress stays on stage 01 (top of range)
-     * - Rest maps linearly 01 → 03 so stage 03 completes exactly at progress 1
-     *   (no early park on 03 / no exit linger)
+     * Catalin Featured Work timing (same up & down):
+     * hold on each stage → wipe → hold → wipe → hold.
+     * Coarse: slightly shorter holds so 03 doesn’t feel stuck before exit.
      */
     const stageFromScroll = (p: number) => {
       if (N <= 1) return 0
-      const raw = gsap.utils.clamp(0, 1, p)
-      const t =
-        raw <= INTRO_HOLD ? 0 : (raw - INTRO_HOLD) / (1 - INTRO_HOLD)
-      return t * (N - 1)
+      const holdW = isCoarse ? 1.2 : 1.4
+      const moveW = 1
+      const total = N * holdW + (N - 1) * moveW
+      let u = gsap.utils.clamp(0, 1, p) * total
+      for (let i = 0; i < N; i++) {
+        if (u <= holdW) return i
+        u -= holdW
+        if (i < N - 1) {
+          if (u <= moveW) return i + u / moveW
+          u -= moveW
+        }
+      }
+      return N - 1
     }
 
     const applyProgress = (p: number) => {
@@ -107,7 +113,7 @@ export function OriginSection() {
       trigger: scroller,
       start: "top top",
       end: "bottom bottom",
-      scrub: 0.2,
+      scrub: isCoarse ? 0.2 : 0.35,
       invalidateOnRefresh: !isCoarse,
       onUpdate(self) {
         applyProgress(self.progress)
