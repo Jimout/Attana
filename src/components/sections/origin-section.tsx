@@ -8,9 +8,8 @@ import styles from "./origin-section.module.css"
 
 /**
  * Origin / Craft — Catalin Featured Work scrub.
- * Desktop: opposite-column split.
- * Small / touch phones: one full-bleed stack 01→02→03 (same holds, longer runway).
- * No GSAP pin.
+ * Desktop: opposite-column split (unchanged).
+ * Very small phones (≤480px): full-bleed stack with equal 01/02/03 stops.
  */
 const STAGES = [
   {
@@ -45,14 +44,13 @@ const STAGES = [
 const N: number = STAGES.length
 /** Desktop runway: 1 sticky + (N-1) travel */
 const SCROLL_VH_DESKTOP = N
-/** Phone: extra travel so 01/02/03 each get a real stop */
-const SCROLL_VH_PHONE = N + 1.5
 /**
- * Must match CSS. Covers tiny phones + touch devices up to ~900px
- * (portrait + landscape) without flipping iPad Pro desktop split.
+ * Tiny phone: travel ≈ one viewport per hold/wipe unit
+ * (N holds + (N-1) wipes) so 01, 02, 03 each stop equally, then exit.
  */
-const PHONE_MQ =
-  "(max-width: 640px), ((pointer: coarse) and (max-width: 900px))"
+const SCROLL_VH_PHONE = 1 + N + (N - 1)
+/** Very small devices only — must match CSS */
+const PHONE_MQ = "(max-width: 480px)"
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -94,13 +92,14 @@ export function OriginSection() {
     }
 
     /**
-     * Catalin timing (same up & down): hold → wipe → hold → wipe → hold.
-     * Phone: longer holds so 01 doesn’t zip; desktop unchanged.
+     * Desktop: Catalin hold/wipe (unchanged).
+     * Tiny phone: equal hold + equal wipe for every stage including 03,
+     * so 01 / 02 / 03 each get the same stop, then the section ends.
      */
     const stageFromScroll = (p: number) => {
       if (N <= 1) return 0
       const phone = isPhone()
-      const holdW = phone ? 1.7 : isCoarse ? 1.2 : 1.4
+      const holdW = phone ? 1 : isCoarse ? 1.2 : 1.4
       const moveW = 1
       const total = N * holdW + (N - 1) * moveW
       let u = gsap.utils.clamp(0, 1, p) * total

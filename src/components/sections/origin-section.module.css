@@ -308,9 +308,8 @@
 }
 
 /*
-  Phone / small touch: one full-bleed stack.
+  Very small phones (≤480px): one full-bleed stack.
   JS sets [data-origin-phone="true"] so layout matches scrub path.
-  Media query is the no-JS / first-paint fallback (same breakpoints).
 */
 .stickyScroll[data-origin-phone="true"] .split {
   display: none;
@@ -335,7 +334,7 @@
   overflow: hidden;
 }
 
-@media (max-width: 640px), ((pointer: coarse) and (max-width: 900px)) {
+@media (max-width: 480px) {
   .split {
     display: none;
   }
