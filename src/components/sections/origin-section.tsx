@@ -7,9 +7,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import styles from "./origin-section.module.css"
 
 /**
- * Origin / Craft — Catalin Featured Work scrub (desktop).
- * Touch / coarse: stacked full-screen stages (no ScrollTrigger pin) so
- * phones never hit black spacer / stage-03 repeat after the pin.
+ * Origin / Craft — Catalin Featured Work scrub on all devices:
+ * opposite columns, same image/title cut at the center seam.
  */
 const STAGES = [
   {
@@ -47,88 +46,7 @@ function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
 }
 
-function useTouchMode() {
-  const [touch, setTouch] = useState(false)
-  const [ready, setReady] = useState(false)
-
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: none), (pointer: coarse)")
-    const sync = () => {
-      setTouch(mq.matches)
-      setReady(true)
-    }
-    sync()
-    mq.addEventListener("change", sync)
-    return () => mq.removeEventListener("change", sync)
-  }, [])
-
-  return { touch, ready }
-}
-
 export function OriginSection() {
-  const { touch, ready } = useTouchMode()
-
-  // Avoid wrong tree on first paint: wait until we know pointer type
-  if (!ready) {
-    return (
-      <section
-        id="origin"
-        className={styles.work}
-        aria-label="Origin and Craft"
-      />
-    )
-  }
-
-  return touch ? <OriginMobile /> : <OriginDesktop />
-}
-
-/** Phone / tablet: 3 full-screen stages in normal document flow — no pin */
-function OriginMobile() {
-  return (
-    <section
-      id="origin"
-      className={styles.work}
-      aria-label="Origin and Craft"
-    >
-      {STAGES.map((stage, i) => (
-        <div key={stage.id} className={styles.mobileSlide}>
-          {i === 0 ? (
-            <div className={styles.head}>
-              <span className={`${styles.lbl} ${styles.lblPlain}`}>
-                <span className="attana-label-index">(03)</span>
-                <span style={{ marginLeft: 12 }}>Origin / Craft</span>
-              </span>
-              <span className={`${styles.lbl} ${styles.lblPlain} ${styles.num}`}>
-                03 — stages
-              </span>
-            </div>
-          ) : null}
-
-          <span className={`${styles.count} ${styles.num}`}>
-            <b>{padIndex(i)}</b> / 03
-          </span>
-          {i === 0 ? (
-            <span className={styles.hint}>Keep scrolling</span>
-          ) : null}
-
-          <div className={`${styles.wcol} ${styles.wcolL}`}>
-            <div className={styles.wcellFill}>
-              <StagePanel stage={stage} />
-            </div>
-          </div>
-          <div className={`${styles.wcol} ${styles.wcolR}`}>
-            <div className={styles.wcellFill}>
-              <StagePanel stage={stage} />
-            </div>
-          </div>
-        </div>
-      ))}
-    </section>
-  )
-}
-
-/** Desktop: Catalin opposite-column scrub (unchanged behavior) */
-function OriginDesktop() {
   const showRef = useRef<HTMLDivElement>(null)
   const trackLRef = useRef<HTMLDivElement>(null)
   const trackRRef = useRef<HTMLDivElement>(null)
@@ -138,6 +56,9 @@ function OriginDesktop() {
     gsap.registerPlugin(ScrollTrigger)
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const isCoarse = window.matchMedia(
+      "(hover: none), (pointer: coarse)",
+    ).matches
     const show = showRef.current
     const trackL = trackLRef.current
     const trackR = trackRRef.current
@@ -174,6 +95,7 @@ function OriginDesktop() {
 
     if (reduced) return
 
+    // Same scrub math everywhere; only refresh/pin invalidation differs on touch
     const endDistance = () =>
       `+=${Math.round(show.offsetHeight * (N + (N - 1)) * 0.7)}`
 
@@ -184,7 +106,7 @@ function OriginDesktop() {
       pin: true,
       scrub: 0.45,
       anticipatePin: 1,
-      invalidateOnRefresh: true,
+      invalidateOnRefresh: !isCoarse,
       pinType: "fixed",
       onUpdate(self) {
         applyProgress(self.progress)
@@ -194,11 +116,20 @@ function OriginDesktop() {
     })
 
     const onResize = () => {
+      if (isCoarse) return
       ScrollTrigger.refresh()
       if (st.isActive) applyProgress(st.progress)
     }
+    const onOrientation = () => {
+      ScrollTrigger.refresh()
+      if (st.isActive) applyProgress(st.progress)
+      else if (st.progress >= 1) applyProgress(1)
+      else applyProgress(0)
+    }
 
     window.addEventListener("resize", onResize)
+    window.addEventListener("orientationchange", onOrientation)
+
     const raf = requestAnimationFrame(() => {
       ScrollTrigger.refresh()
       if (st.isActive) applyProgress(st.progress)
@@ -212,6 +143,7 @@ function OriginDesktop() {
       cancelAnimationFrame(raf)
       window.clearTimeout(boot)
       window.removeEventListener("resize", onResize)
+      window.removeEventListener("orientationchange", onOrientation)
       st.kill()
       applyProgress(0)
     }
