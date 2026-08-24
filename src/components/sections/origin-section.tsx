@@ -95,14 +95,32 @@ export function OriginSection() {
       return N - 1
     }
 
+    /** Pixel-size a track so each cell === cellH (matches scrub translate). */
+    let lastCellH = 0
+    const sizeTrack = (track: HTMLElement, cellH: number) => {
+      const h = Math.max(1, Math.round(cellH))
+      if (h !== lastCellH || track.style.height !== `${N * h}px`) {
+        track.style.height = `${N * h}px`
+        for (let i = 0; i < track.children.length; i++) {
+          const cell = track.children[i] as HTMLElement
+          cell.style.height = `${h}px`
+          cell.style.flexShrink = "0"
+        }
+      }
+      return h
+    }
+
     const applyProgress = (p: number) => {
       const stage = stageFromScroll(p)
-      const cellH = show.clientHeight
+      const rawH = show.clientHeight
       if (narrowMq.matches) {
-        // Phone: one full-bleed stack sliding 01 → 02 → 03
+        const cellH = sizeTrack(trackM, rawH)
+        lastCellH = cellH
         gsap.set(trackM, { y: -cellH * stage, force3D: true })
       } else {
-        // Desktop: Catalin opposite columns
+        const cellH = sizeTrack(trackL, rawH)
+        sizeTrack(trackR, cellH)
+        lastCellH = cellH
         gsap.set(trackL, { y: -cellH * stage, force3D: true })
         gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
       }
@@ -246,17 +264,9 @@ export function OriginSection() {
 
           {/* Phone only: full-bleed stack, same scrub */}
           <div className={styles.mobileStack}>
-            <div
-              ref={trackMRef}
-              className={styles.wtrack}
-              style={{ height: `${N * 100}%` }}
-            >
+            <div ref={trackMRef} className={`${styles.wtrack} ${styles.mtrack}`}>
               {STAGES.map((p) => (
-                <div
-                  key={`m-${p.id}`}
-                  className={styles.wcell}
-                  style={{ height: `${100 / N}%` }}
-                >
+                <div key={`m-${p.id}`} className={`${styles.wcell} ${styles.mcell}`}>
                   <MobilePanel stage={p} />
                 </div>
               ))}

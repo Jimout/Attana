@@ -309,7 +309,7 @@
 
 /*
   Phone only: real full-bleed stack (not a hacked half of the split).
-  Desktop Catalin split is untouched above 480px.
+  Cell heights are set in px by JS so they match scrub translate exactly.
 */
 @media (max-width: 480px) {
   .split {
@@ -321,6 +321,20 @@
     position: absolute;
     inset: 0;
     overflow: hidden;
+  }
+
+  .mtrack {
+    display: flex;
+    flex-direction: column;
+    /* height set in px via JS */
+  }
+
+  .mcell {
+    position: relative;
+    flex: 0 0 auto;
+    width: 100%;
+    overflow: hidden;
+    /* height set in px via JS — must equal scrub step */
   }
 
   .wfullTags {
