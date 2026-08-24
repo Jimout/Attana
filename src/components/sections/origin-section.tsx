@@ -43,10 +43,12 @@ const STAGES = [
 
 const N: number = STAGES.length
 /**
- * Parent height in viewports = 1 (sticky stage) + (N-1) scrub travel.
- * Scrub end is exactly (N-1) × stage height from sticky lock — no extra 03 tail.
+ * Parent = 1 sticky viewport + (N-1) scrub travel.
+ * Keep this exact — taller runway makes 03 linger after the wipe.
  */
 const SCROLL_VH = N
+/** Share of scrub kept on stage 01 at the top of the range (same up & down). */
+const INTRO_HOLD = 0.14
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -74,38 +76,21 @@ export function OriginSection() {
     if (!scroller || !show || !trackL || !trackR) return
 
     /**
-     * Raw sticky progress → scrub progress:
-     * - First slice stays on stage 01 (compensates for seeing 01 while entering)
-     * - Remaining 0→1 maps evenly across stages (works the same scrolling up)
+     * Symmetric along the scroll axis (same positions up and down):
+     * - First INTRO_HOLD of progress stays on stage 01 (top of range)
+     * - Rest maps linearly 01 → 03 so stage 03 completes exactly at progress 1
+     *   (no early park on 03 / no exit linger)
      */
-    const scrubProgress = (raw: number) => {
-      const p = gsap.utils.clamp(0, 1, raw)
-      const intro = 0.16
-      if (p <= intro) return 0
-      return (p - intro) / (1 - intro)
+    const stageFromScroll = (p: number) => {
+      if (N <= 1) return 0
+      const raw = gsap.utils.clamp(0, 1, p)
+      const t =
+        raw <= INTRO_HOLD ? 0 : (raw - INTRO_HOLD) / (1 - INTRO_HOLD)
+      return t * (N - 1)
     }
 
-    /** Equal hold + move on remapped progress — 01 / 02 / 03 share scroll fairly */
-    const stageFromScroll = (raw: number) => {
-      const p = scrubProgress(raw)
-      const holdW = 1
-      const moveW = 1
-      const total = N * holdW + (N - 1) * moveW
-      let u = p * total
-
-      for (let i = 0; i < N; i++) {
-        if (u <= holdW) return i
-        u -= holdW
-        if (i < N - 1) {
-          if (u <= moveW) return i + u / moveW
-          u -= moveW
-        }
-      }
-      return N - 1
-    }
-
-    const applyProgress = (raw: number) => {
-      const stage = stageFromScroll(raw)
+    const applyProgress = (p: number) => {
+      const stage = stageFromScroll(p)
       const cellH = show.clientHeight
       gsap.set(trackL, { y: -cellH * stage, force3D: true })
       gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
@@ -117,12 +102,12 @@ export function OriginSection() {
 
     if (reduced) return
 
-    // Scrub only while the stage is stuck; distance = exactly (N-1) viewports
+    // Tall parent is the trigger — never the sticky node (that broke scrub)
     const st = ScrollTrigger.create({
-      trigger: show,
+      trigger: scroller,
       start: "top top",
-      end: () => `+=${Math.round(show.offsetHeight * (N - 1))}`,
-      scrub: 0.15,
+      end: "bottom bottom",
+      scrub: 0.2,
       invalidateOnRefresh: !isCoarse,
       onUpdate(self) {
         applyProgress(self.progress)
