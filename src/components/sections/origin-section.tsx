@@ -43,9 +43,8 @@ const STAGES = [
 
 const N: number = STAGES.length
 /**
- * Sticky runway height in viewport units.
- * Must match scrub travel: (SCROLL_VH - 1) viewports ≈ space for even 01→02→03.
- * Too tall = stage 03 lingers; too short = stages feel rushed.
+ * Parent height in viewports = 1 (sticky stage) + (N-1) scrub travel.
+ * Scrub end is exactly (N-1) × stage height from sticky lock — no extra 03 tail.
  */
 const SCROLL_VH = N
 
@@ -75,14 +74,24 @@ export function OriginSection() {
     if (!scroller || !show || !trackL || !trackR) return
 
     /**
-     * Even stage timing both directions: equal hold + equal move weights
-     * so 01 / 02 / 03 each get the same share of sticky scroll.
+     * Raw sticky progress → scrub progress:
+     * - First slice stays on stage 01 (compensates for seeing 01 while entering)
+     * - Remaining 0→1 maps evenly across stages (works the same scrolling up)
      */
-    const stageFromScroll = (p: number) => {
+    const scrubProgress = (raw: number) => {
+      const p = gsap.utils.clamp(0, 1, raw)
+      const intro = 0.16
+      if (p <= intro) return 0
+      return (p - intro) / (1 - intro)
+    }
+
+    /** Equal hold + move on remapped progress — 01 / 02 / 03 share scroll fairly */
+    const stageFromScroll = (raw: number) => {
+      const p = scrubProgress(raw)
       const holdW = 1
       const moveW = 1
       const total = N * holdW + (N - 1) * moveW
-      let u = gsap.utils.clamp(0, 1, p) * total
+      let u = p * total
 
       for (let i = 0; i < N; i++) {
         if (u <= holdW) return i
@@ -95,8 +104,8 @@ export function OriginSection() {
       return N - 1
     }
 
-    const applyProgress = (p: number) => {
-      const stage = stageFromScroll(p)
+    const applyProgress = (raw: number) => {
+      const stage = stageFromScroll(raw)
       const cellH = show.clientHeight
       gsap.set(trackL, { y: -cellH * stage, force3D: true })
       gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
@@ -108,12 +117,12 @@ export function OriginSection() {
 
     if (reduced) return
 
+    // Scrub only while the stage is stuck; distance = exactly (N-1) viewports
     const st = ScrollTrigger.create({
-      trigger: scroller,
+      trigger: show,
       start: "top top",
-      end: "bottom bottom",
-      // Tighter scrub so up/down stay in sync and first stage doesn’t “zip”
-      scrub: 0.2,
+      end: () => `+=${Math.round(show.offsetHeight * (N - 1))}`,
+      scrub: 0.15,
       invalidateOnRefresh: !isCoarse,
       onUpdate(self) {
         applyProgress(self.progress)
