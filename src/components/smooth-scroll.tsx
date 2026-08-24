@@ -219,8 +219,9 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     const coarse = window.matchMedia("(hover: none), (pointer: coarse)").matches
 
     if (reduced || coarse) {
-      const onResize = () => ScrollTrigger.refresh()
-      window.addEventListener("resize", onResize)
+      // Avoid ScrollTrigger.refresh on mobile chrome resize — it re-catches Origin pin
+      const onOrientation = () => ScrollTrigger.refresh()
+      window.addEventListener("orientationchange", onOrientation)
       const onClick = (e: MouseEvent) => onNavClick(e, null)
       document.addEventListener("click", onClick)
       scheduleSettles(null)
@@ -228,7 +229,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       return () => {
         cancelled = true
         timers.forEach((id) => window.clearTimeout(id))
-        window.removeEventListener("resize", onResize)
+        window.removeEventListener("orientationchange", onOrientation)
         window.removeEventListener("wheel", markUserMoved)
         window.removeEventListener("touchstart", markUserMoved)
         window.removeEventListener("keydown", markUserMoved)

@@ -97,45 +97,71 @@ export function OriginSection() {
     ).matches
 
     const scrollBeats = N + (N - 1)
+    // Shorter pin travel on touch — less empty black after 03 before next section
+    const endMul = isCoarse ? 55 : 70
+
+    /** After leaving forward, keep stage 3 locked so momentum can’t re-scrub 03 */
+    let exitLocked = false
 
     const st = ScrollTrigger.create({
       trigger: show,
       start: "top top",
-      end: `+=${scrollBeats * 70}%`,
+      end: `+=${scrollBeats * endMul}%`,
       pin: true,
-      // Tighter scrub on touch so pin exit doesn’t rubber-band back into stage 3
       scrub: isCoarse ? true : 0.45,
       anticipatePin: 1,
-      // Mobile URL-bar resize must NOT rebuild the pin mid-gesture
       invalidateOnRefresh: !isCoarse,
-      pinType: "fixed",
+      // transform unpin is more reliable on iOS than fixed (avoids black → 03 bounce)
+      pinType: isCoarse ? "transform" : "fixed",
       fastScrollEnd: true,
       preventOverlaps: true,
       onUpdate(self) {
+        if (exitLocked && self.direction >= 0) {
+          applyProgress(1)
+          return
+        }
         applyProgress(self.progress)
       },
-      onLeave: () => applyProgress(1),
-      onLeaveBack: () => applyProgress(0),
+      onLeave: () => {
+        exitLocked = true
+        applyProgress(1)
+      },
+      onEnterBack: () => {
+        exitLocked = false
+      },
+      onLeaveBack: () => {
+        exitLocked = false
+        applyProgress(0)
+      },
     })
 
     const refreshIfSafe = () => {
+      // Never rebuild pin metrics while the user is past Origin on mobile
+      if (isCoarse && (exitLocked || (!st.isActive && st.progress >= 1))) {
+        applyProgress(1)
+        return
+      }
       ScrollTrigger.refresh()
-      // Only re-apply while the pin is active — avoids snapping back to 03 after exit
+      if (exitLocked) {
+        applyProgress(1)
+        return
+      }
       if (st.isActive) applyProgress(st.progress)
     }
 
-    // Desktop: normal resize. Mobile: orientation only (not URL-bar visualViewport).
     const onWindowResize = () => {
       if (isCoarse) return
       refreshIfSafe()
     }
-    const onOrientation = () => refreshIfSafe()
+    const onOrientation = () => {
+      exitLocked = false
+      refreshIfSafe()
+    }
 
     window.addEventListener("resize", onWindowResize)
     window.addEventListener("orientationchange", onOrientation)
 
     const raf = requestAnimationFrame(() => refreshIfSafe())
-    // One late measure after layout — not a burst of refreshes that re-catch the pin
     const boot = window.setTimeout(() => refreshIfSafe(), isCoarse ? 200 : 300)
 
     return () => {
