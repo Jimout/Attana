@@ -8,10 +8,7 @@ import styles from "./origin-section.module.css"
 
 /**
  * Origin / Craft — Catalin Featured Work scrub:
- * - Left stack: origin1 → origin2 → origin3
- * - Right stack: reversed origin3 → origin2 → origin1
- * - Opposite vertical motion so when locked, both halves are the same
- *   image cut (left 50% + right 50% of originN)
+ * Opposite columns + same image/title cut meeting at the center seam.
  */
 const STAGES = [
   {
@@ -54,7 +51,6 @@ export function OriginSection() {
   const trackLRef = useRef<HTMLDivElement>(null)
   const trackRRef = useRef<HTMLDivElement>(null)
   const [cur, setCur] = useState(0)
-  const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -66,7 +62,6 @@ export function OriginSection() {
 
     if (!show || !trackL || !trackR) return
 
-    /** Scroll 0–1 → stage 0..(N-1) with a dwell so each cut locks clearly */
     const stageFromScroll = (p: number) => {
       const holdW = 1.4
       const moveW = 1
@@ -87,15 +82,8 @@ export function OriginSection() {
     const applyProgress = (p: number) => {
       const stage = stageFromScroll(p)
       const cellH = show.clientHeight
-      // Catalin opposite scrub — integer stages: both halves = origin(stage+1)
-      gsap.set(trackL, {
-        y: -cellH * stage,
-        force3D: true,
-      })
-      gsap.set(trackR, {
-        y: -cellH * (N - 1 - stage),
-        force3D: true,
-      })
+      gsap.set(trackL, { y: -cellH * stage, force3D: true })
+      gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
       setCur(Math.min(N - 1, Math.round(stage)))
     }
 
@@ -156,7 +144,6 @@ export function OriginSection() {
   }, [])
 
   const reversed = [...STAGES].reverse()
-  const active = STAGES[cur] ?? STAGES[0]
 
   return (
     <section
@@ -174,13 +161,7 @@ export function OriginSection() {
         </span>
       </div>
 
-      <div
-        ref={showRef}
-        className={styles.wshow}
-        id="wshow"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
+      <div ref={showRef} className={styles.wshow} id="wshow">
         <span className={`${styles.count} ${styles.num}`}>
           <b>{padIndex(cur)}</b> / 03
         </span>
@@ -210,7 +191,6 @@ export function OriginSection() {
             className={styles.wtrack}
             style={{
               height: `${N * 100}%`,
-              // Reversed stack: land on origin1 (bottom) before JS runs
               transform: `translate3d(0, -${((N - 1) / N) * 100}%, 0)`,
             }}
           >
@@ -225,28 +205,6 @@ export function OriginSection() {
             ))}
           </div>
         </div>
-
-        <div
-          className={`${styles.wcopy} ${hovered ? styles.wcopyHov : ""}`}
-          aria-live="polite"
-        >
-          <span className={styles.wfullTags}>
-            {active.tags.map((t, i) => (
-              <span key={t}>
-                {i > 0 ? <i>·</i> : null}
-                {t}
-              </span>
-            ))}
-          </span>
-          <span className={styles.wfullName}>
-            {active.title.map((line, i) => (
-              <span key={line}>
-                {i > 0 ? <br /> : null}
-                {line}
-              </span>
-            ))}
-          </span>
-        </div>
       </div>
     </section>
   )
@@ -254,7 +212,12 @@ export function OriginSection() {
 
 function StagePanel({ stage }: { stage: (typeof STAGES)[number] }) {
   return (
-    <div className={styles.wfull} role="img" aria-label={stage.alt}>
+    <div
+      className={styles.wfull}
+      data-pid={stage.id}
+      role="img"
+      aria-label={stage.alt}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className={styles.wfullImg}
@@ -266,6 +229,25 @@ function StagePanel({ stage }: { stage: (typeof STAGES)[number] }) {
         fetchPriority="low"
         style={{ objectPosition: stage.objectPosition }}
       />
+      {/* Duplicated full-width copy — clipped by column like Catalin */}
+      <span className={styles.wfullUi} aria-hidden="true">
+        <span className={styles.wfullTags}>
+          {stage.tags.map((t, i) => (
+            <span key={t}>
+              {i > 0 ? <i>·</i> : null}
+              {t}
+            </span>
+          ))}
+        </span>
+        <span className={styles.wfullName}>
+          {stage.title.map((line, i) => (
+            <span key={line}>
+              {i > 0 ? <br /> : null}
+              {line}
+            </span>
+          ))}
+        </span>
+      </span>
     </div>
   )
 }

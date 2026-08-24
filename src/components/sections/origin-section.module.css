@@ -66,6 +66,10 @@
   touch-action: pan-y;
 }
 
+.wshow:hover .wfullName {
+  color: var(--white);
+}
+
 .wcol {
   position: absolute;
   top: 0;
@@ -134,8 +138,11 @@
   background: var(--attana-overlay);
 }
 
-/* One centered copy layer (not split) — letters never break at the seam */
-.wcopy {
+/*
+  Title lives inside each half panel (same box as the image).
+  Centered in the full-stage-wide .wfull so letters meet at the seam.
+*/
+.wfullUi {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -144,8 +151,11 @@
   align-items: center;
   justify-content: center;
   gap: clamp(14px, 2.4vh, 24px);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0;
   text-align: center;
-  padding: 0 var(--pad);
   pointer-events: none;
 }
 
@@ -155,6 +165,7 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--grey);
+  white-space: nowrap;
 }
 
 .wfullTags i {
@@ -166,15 +177,13 @@
 .wfullName {
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: -0.03em;
+  /* Neutral spacing so mid-letters meet cleanly at the split */
+  letter-spacing: 0;
   line-height: 0.95;
+  /* Same vw on both halves → identical glyph metrics at the seam */
   font-size: clamp(40px, 10.5vw, 180px);
   color: var(--grey);
   transition: color 0.3s;
-}
-
-.wcopyHov .wfullName {
-  color: var(--white);
 }
 
 .count {
