@@ -30,13 +30,26 @@
 
 .wshow {
   position: relative;
-  /* svh fallback; dvh is stabler on mobile URL-bar (avoids pin spacer black gaps) */
   height: 100svh;
   height: 100dvh;
   overflow: hidden;
   overflow-x: clip;
   background: var(--black);
   touch-action: pan-y;
+}
+
+/* Tall scroll runway; stage sticks for Catalin-style scrub without GSAP pin */
+.stickyScroll {
+  position: relative;
+  width: 100%;
+  height: calc(var(--origin-scroll-vh, 3.5) * 100svh);
+  height: calc(var(--origin-scroll-vh, 3.5) * 100dvh);
+}
+
+.wshowSticky {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .head {

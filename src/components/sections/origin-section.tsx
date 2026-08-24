@@ -7,8 +7,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import styles from "./origin-section.module.css"
 
 /**
- * Origin / Craft — Catalin Featured Work scrub on all devices:
- * opposite columns, same image/title cut at the center seam.
+ * Origin / Craft — Catalin Featured Work scrub.
+ * Uses CSS sticky + ScrollTrigger progress (no GSAP pin) so phone and
+ * desktop share the same opposite-column scrub without pin-spacer / 03-repeat bugs.
  */
 const STAGES = [
   {
@@ -41,12 +42,15 @@ const STAGES = [
 ] as const
 
 const N: number = STAGES.length
+/** Scroll length in viewport-heights while the stage stays sticky */
+const SCROLL_VH = (N + (N - 1)) * 0.7
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
 }
 
 export function OriginSection() {
+  const scrollRef = useRef<HTMLDivElement>(null)
   const showRef = useRef<HTMLDivElement>(null)
   const trackLRef = useRef<HTMLDivElement>(null)
   const trackRRef = useRef<HTMLDivElement>(null)
@@ -59,11 +63,12 @@ export function OriginSection() {
     const isCoarse = window.matchMedia(
       "(hover: none), (pointer: coarse)",
     ).matches
+    const scroller = scrollRef.current
     const show = showRef.current
     const trackL = trackLRef.current
     const trackR = trackRRef.current
 
-    if (!show || !trackL || !trackR) return
+    if (!scroller || !show || !trackL || !trackR) return
 
     const stageFromScroll = (p: number) => {
       const holdW = 1.4
@@ -95,19 +100,13 @@ export function OriginSection() {
 
     if (reduced) return
 
-    // Same scrub math everywhere; only refresh/pin invalidation differs on touch
-    const endDistance = () =>
-      `+=${Math.round(show.offsetHeight * (N + (N - 1)) * 0.7)}`
-
     const st = ScrollTrigger.create({
-      trigger: show,
+      trigger: scroller,
       start: "top top",
-      end: endDistance,
-      pin: true,
+      end: "bottom bottom",
       scrub: 0.45,
-      anticipatePin: 1,
+      // No pin — sticky stage handles “locked viewport”; avoids mobile black/03 loop
       invalidateOnRefresh: !isCoarse,
-      pinType: "fixed",
       onUpdate(self) {
         applyProgress(self.progress)
       },
@@ -118,13 +117,11 @@ export function OriginSection() {
     const onResize = () => {
       if (isCoarse) return
       ScrollTrigger.refresh()
-      if (st.isActive) applyProgress(st.progress)
+      applyProgress(st.progress)
     }
     const onOrientation = () => {
       ScrollTrigger.refresh()
-      if (st.isActive) applyProgress(st.progress)
-      else if (st.progress >= 1) applyProgress(1)
-      else applyProgress(0)
+      applyProgress(st.progress)
     }
 
     window.addEventListener("resize", onResize)
@@ -132,11 +129,11 @@ export function OriginSection() {
 
     const raf = requestAnimationFrame(() => {
       ScrollTrigger.refresh()
-      if (st.isActive) applyProgress(st.progress)
+      applyProgress(st.progress)
     })
     const boot = window.setTimeout(() => {
       ScrollTrigger.refresh()
-      if (st.isActive) applyProgress(st.progress)
+      applyProgress(st.progress)
     }, 300)
 
     return () => {
@@ -157,58 +154,72 @@ export function OriginSection() {
       className={styles.work}
       aria-label="Origin and Craft"
     >
-      <div ref={showRef} className={styles.wshow} id="wshow">
-        <div className={styles.head}>
-          <span className={`${styles.lbl} ${styles.lblPlain}`}>
-            <span className="attana-label-index">(03)</span>
-            <span style={{ marginLeft: 12 }}>Origin / Craft</span>
-          </span>
-          <span className={`${styles.lbl} ${styles.lblPlain} ${styles.num}`}>
-            03 — stages
-          </span>
-        </div>
-
-        <span className={`${styles.count} ${styles.num}`}>
-          <b>{padIndex(cur)}</b> / 03
-        </span>
-        <span className={styles.hint}>Keep scrolling</span>
-
-        <div className={`${styles.wcol} ${styles.wcolL}`}>
-          <div
-            ref={trackLRef}
-            className={styles.wtrack}
-            style={{ height: `${N * 100}%` }}
-          >
-            {STAGES.map((p) => (
-              <div
-                key={`l-${p.id}`}
-                className={styles.wcell}
-                style={{ height: `${100 / N}%` }}
-              >
-                <StagePanel stage={p} />
-              </div>
-            ))}
+      <div
+        ref={scrollRef}
+        className={styles.stickyScroll}
+        style={
+          {
+            ["--origin-scroll-vh" as string]: String(SCROLL_VH),
+          } as React.CSSProperties
+        }
+      >
+        <div
+          ref={showRef}
+          className={`${styles.wshow} ${styles.wshowSticky}`}
+          id="wshow"
+        >
+          <div className={styles.head}>
+            <span className={`${styles.lbl} ${styles.lblPlain}`}>
+              <span className="attana-label-index">(03)</span>
+              <span style={{ marginLeft: 12 }}>Origin / Craft</span>
+            </span>
+            <span className={`${styles.lbl} ${styles.lblPlain} ${styles.num}`}>
+              03 — stages
+            </span>
           </div>
-        </div>
 
-        <div className={`${styles.wcol} ${styles.wcolR}`}>
-          <div
-            ref={trackRRef}
-            className={styles.wtrack}
-            style={{
-              height: `${N * 100}%`,
-              transform: `translate3d(0, -${((N - 1) / N) * 100}%, 0)`,
-            }}
-          >
-            {reversed.map((p) => (
-              <div
-                key={`r-${p.id}`}
-                className={styles.wcell}
-                style={{ height: `${100 / N}%` }}
-              >
-                <StagePanel stage={p} />
-              </div>
-            ))}
+          <span className={`${styles.count} ${styles.num}`}>
+            <b>{padIndex(cur)}</b> / 03
+          </span>
+          <span className={styles.hint}>Keep scrolling</span>
+
+          <div className={`${styles.wcol} ${styles.wcolL}`}>
+            <div
+              ref={trackLRef}
+              className={styles.wtrack}
+              style={{ height: `${N * 100}%` }}
+            >
+              {STAGES.map((p) => (
+                <div
+                  key={`l-${p.id}`}
+                  className={styles.wcell}
+                  style={{ height: `${100 / N}%` }}
+                >
+                  <StagePanel stage={p} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${styles.wcol} ${styles.wcolR}`}>
+            <div
+              ref={trackRRef}
+              className={styles.wtrack}
+              style={{
+                height: `${N * 100}%`,
+                transform: `translate3d(0, -${((N - 1) / N) * 100}%, 0)`,
+              }}
+            >
+              {reversed.map((p) => (
+                <div
+                  key={`r-${p.id}`}
+                  className={styles.wcell}
+                  style={{ height: `${100 / N}%` }}
+                >
+                  <StagePanel stage={p} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
