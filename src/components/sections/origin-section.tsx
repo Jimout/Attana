@@ -8,8 +8,8 @@ import styles from "./origin-section.module.css"
 
 /**
  * Origin / Craft — Catalin Featured Work scrub.
- * Uses CSS sticky + ScrollTrigger progress (no GSAP pin) so phone and
- * desktop share the same opposite-column scrub without pin-spacer / 03-repeat bugs.
+ * Desktop: opposite-column split. Phone (≤480px): full-bleed stack 01→02→03.
+ * Same sticky runway + hold/wipe timing — no GSAP pin.
  */
 const STAGES = [
   {
@@ -42,11 +42,9 @@ const STAGES = [
 ] as const
 
 const N: number = STAGES.length
-/**
- * Parent = 1 sticky viewport + (N-1) scrub travel.
- * Exact height keeps exit clean after the last stage hold (no empty tail).
- */
+/** Parent = 1 sticky viewport + (N-1) scrub travel. */
 const SCROLL_VH = N
+const NARROW_MQ = "(max-width: 480px)"
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -57,6 +55,7 @@ export function OriginSection() {
   const showRef = useRef<HTMLDivElement>(null)
   const trackLRef = useRef<HTMLDivElement>(null)
   const trackRRef = useRef<HTMLDivElement>(null)
+  const trackMRef = useRef<HTMLDivElement>(null)
   const [cur, setCur] = useState(0)
 
   useEffect(() => {
@@ -66,17 +65,18 @@ export function OriginSection() {
     const isCoarse = window.matchMedia(
       "(hover: none), (pointer: coarse)",
     ).matches
+    const narrowMq = window.matchMedia(NARROW_MQ)
     const scroller = scrollRef.current
     const show = showRef.current
     const trackL = trackLRef.current
     const trackR = trackRRef.current
+    const trackM = trackMRef.current
 
-    if (!scroller || !show || !trackL || !trackR) return
+    if (!scroller || !show || !trackL || !trackR || !trackM) return
 
     /**
-     * Catalin Featured Work timing (same up & down):
-     * hold on each stage → wipe → hold → wipe → hold.
-     * Coarse: slightly shorter holds so 03 doesn’t feel stuck before exit.
+     * Catalin timing (same up & down):
+     * hold → wipe → hold → wipe → hold.
      */
     const stageFromScroll = (p: number) => {
       if (N <= 1) return 0
@@ -98,8 +98,14 @@ export function OriginSection() {
     const applyProgress = (p: number) => {
       const stage = stageFromScroll(p)
       const cellH = show.clientHeight
-      gsap.set(trackL, { y: -cellH * stage, force3D: true })
-      gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
+      if (narrowMq.matches) {
+        // Phone: one full-bleed stack sliding 01 → 02 → 03
+        gsap.set(trackM, { y: -cellH * stage, force3D: true })
+      } else {
+        // Desktop: Catalin opposite columns
+        gsap.set(trackL, { y: -cellH * stage, force3D: true })
+        gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
+      }
       const next = Math.min(N - 1, Math.round(stage))
       setCur((c) => (c === next ? c : next))
     }
@@ -108,7 +114,6 @@ export function OriginSection() {
 
     if (reduced) return
 
-    // Tall parent is the trigger — never the sticky node (that broke scrub)
     const st = ScrollTrigger.create({
       trigger: scroller,
       start: "top top",
@@ -131,9 +136,14 @@ export function OriginSection() {
       ScrollTrigger.refresh()
       applyProgress(st.progress)
     }
+    const onNarrowChange = () => {
+      ScrollTrigger.refresh()
+      applyProgress(st.progress)
+    }
 
     window.addEventListener("resize", onResize)
     window.addEventListener("orientationchange", onOrientation)
+    narrowMq.addEventListener("change", onNarrowChange)
 
     const raf = requestAnimationFrame(() => {
       ScrollTrigger.refresh()
@@ -149,6 +159,7 @@ export function OriginSection() {
       window.clearTimeout(boot)
       window.removeEventListener("resize", onResize)
       window.removeEventListener("orientationchange", onOrientation)
+      narrowMq.removeEventListener("change", onNarrowChange)
       st.kill()
       applyProgress(0)
     }
@@ -191,40 +202,62 @@ export function OriginSection() {
           </span>
           <span className={styles.hint}>Keep scrolling</span>
 
-          <div className={`${styles.wcol} ${styles.wcolL}`}>
+          {/* Desktop / tablet: Catalin split — unchanged */}
+          <div className={styles.split}>
+            <div className={`${styles.wcol} ${styles.wcolL}`}>
+              <div
+                ref={trackLRef}
+                className={styles.wtrack}
+                style={{ height: `${N * 100}%` }}
+              >
+                {STAGES.map((p) => (
+                  <div
+                    key={`l-${p.id}`}
+                    className={styles.wcell}
+                    style={{ height: `${100 / N}%` }}
+                  >
+                    <StagePanel stage={p} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className={`${styles.wcol} ${styles.wcolR}`}>
+              <div
+                ref={trackRRef}
+                className={styles.wtrack}
+                style={{
+                  height: `${N * 100}%`,
+                  transform: `translate3d(0, -${((N - 1) / N) * 100}%, 0)`,
+                }}
+              >
+                {reversed.map((p) => (
+                  <div
+                    key={`r-${p.id}`}
+                    className={styles.wcell}
+                    style={{ height: `${100 / N}%` }}
+                  >
+                    <StagePanel stage={p} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Phone only: full-bleed stack, same scrub */}
+          <div className={styles.mobileStack}>
             <div
-              ref={trackLRef}
+              ref={trackMRef}
               className={styles.wtrack}
               style={{ height: `${N * 100}%` }}
             >
               {STAGES.map((p) => (
                 <div
-                  key={`l-${p.id}`}
+                  key={`m-${p.id}`}
                   className={styles.wcell}
                   style={{ height: `${100 / N}%` }}
                 >
-                  <StagePanel stage={p} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className={`${styles.wcol} ${styles.wcolR}`}>
-            <div
-              ref={trackRRef}
-              className={styles.wtrack}
-              style={{
-                height: `${N * 100}%`,
-                transform: `translate3d(0, -${((N - 1) / N) * 100}%, 0)`,
-              }}
-            >
-              {reversed.map((p) => (
-                <div
-                  key={`r-${p.id}`}
-                  className={styles.wcell}
-                  style={{ height: `${100 / N}%` }}
-                >
-                  <StagePanel stage={p} />
+                  <MobilePanel stage={p} />
                 </div>
               ))}
             </div>
@@ -264,6 +297,48 @@ function StagePanel({ stage }: { stage: (typeof STAGES)[number] }) {
           ))}
         </span>
         <span className={styles.wfullName}>
+          {stage.title.map((line, i) => (
+            <span key={line}>
+              {i > 0 ? <br /> : null}
+              {line}
+            </span>
+          ))}
+        </span>
+      </span>
+    </div>
+  )
+}
+
+/** Full-viewport panel for phone stack (not a 200% seam crop). */
+function MobilePanel({ stage }: { stage: (typeof STAGES)[number] }) {
+  return (
+    <div
+      className={styles.mfull}
+      data-pid={stage.id}
+      role="img"
+      aria-label={stage.alt}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className={styles.wfullImg}
+        src={stage.img}
+        alt=""
+        draggable={false}
+        decoding="async"
+        loading="eager"
+        fetchPriority="low"
+        style={{ objectPosition: stage.objectPosition }}
+      />
+      <span className={styles.mfullUi} aria-hidden="true">
+        <span className={styles.wfullTags}>
+          {stage.tags.map((t, i) => (
+            <span key={t}>
+              {i > 0 ? <i>·</i> : null}
+              {t}
+            </span>
+          ))}
+        </span>
+        <span className={styles.mfullName}>
           {stage.title.map((line, i) => (
             <span key={line}>
               {i > 0 ? <br /> : null}

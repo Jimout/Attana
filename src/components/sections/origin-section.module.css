@@ -259,27 +259,68 @@
   }
 }
 
+/* Desktop/tablet split stays as-is; phone uses its own full stack */
+.split {
+  display: contents;
+}
+
+.mobileStack {
+  display: none;
+}
+
+.mfull {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mfull::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--attana-overlay);
+}
+
+.mfullUi {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2vh, 20px);
+  padding: 0 var(--pad);
+  text-align: center;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.mfullName {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.95;
+  font-size: clamp(36px, 11vw, 64px);
+  color: var(--grey);
+}
+
 /*
-  Very small phones: same sticky scrub as desktop — only drop the
-  vertical seam. Left column becomes the full stage image.
+  Phone only: real full-bleed stack (not a hacked half of the split).
+  Desktop Catalin split is untouched above 480px.
 */
 @media (max-width: 480px) {
-  .wcolR {
+  .split {
     display: none;
   }
 
-  .wcolL {
-    left: 0;
-    width: 100%;
-  }
-
-  .wfull {
-    width: 100%;
-    left: 0;
-  }
-
-  .wfullName {
-    font-size: clamp(36px, 11vw, 64px);
+  .mobileStack {
+    display: block;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
   }
 
   .wfullTags {
