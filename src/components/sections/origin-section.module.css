@@ -42,8 +42,8 @@
 .stickyScroll {
   position: relative;
   width: 100%;
-  height: calc(var(--origin-scroll-vh, 3.5) * 100svh);
-  height: calc(var(--origin-scroll-vh, 3.5) * 100dvh);
+  height: calc(var(--origin-scroll-vh, 3) * 100svh);
+  height: calc(var(--origin-scroll-vh, 3) * 100dvh);
 }
 
 .wshowSticky {

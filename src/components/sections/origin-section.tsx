@@ -42,8 +42,12 @@ const STAGES = [
 ] as const
 
 const N: number = STAGES.length
-/** Scroll length in viewport-heights while the stage stays sticky */
-const SCROLL_VH = (N + (N - 1)) * 0.7
+/**
+ * Sticky runway height in viewport units.
+ * Must match scrub travel: (SCROLL_VH - 1) viewports ≈ space for even 01→02→03.
+ * Too tall = stage 03 lingers; too short = stages feel rushed.
+ */
+const SCROLL_VH = N
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -70,8 +74,12 @@ export function OriginSection() {
 
     if (!scroller || !show || !trackL || !trackR) return
 
+    /**
+     * Even stage timing both directions: equal hold + equal move weights
+     * so 01 / 02 / 03 each get the same share of sticky scroll.
+     */
     const stageFromScroll = (p: number) => {
-      const holdW = 1.4
+      const holdW = 1
       const moveW = 1
       const total = N * holdW + (N - 1) * moveW
       let u = gsap.utils.clamp(0, 1, p) * total
@@ -104,8 +112,8 @@ export function OriginSection() {
       trigger: scroller,
       start: "top top",
       end: "bottom bottom",
-      scrub: 0.45,
-      // No pin — sticky stage handles “locked viewport”; avoids mobile black/03 loop
+      // Tighter scrub so up/down stay in sync and first stage doesn’t “zip”
+      scrub: 0.2,
       invalidateOnRefresh: !isCoarse,
       onUpdate(self) {
         applyProgress(self.progress)
