@@ -79,6 +79,21 @@
   color: var(--white);
 }
 
+/* Mobile: one full-screen slide per origin image — normal scroll, no pin */
+.mobileSlide {
+  position: relative;
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--black);
+}
+
+.wcellFill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 .wcol {
   position: absolute;
   top: 0;
