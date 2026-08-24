@@ -39,6 +39,8 @@ const STAGES = [
 ] as const
 
 const N: number = STAGES.length
+/** yPercent travel so both columns land on the same stage index */
+const TRAVEL = (100 / N) * (N - 1)
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -59,10 +61,7 @@ export function OriginSection() {
     const trackL = trackLRef.current
     const trackR = trackRRef.current
 
-    if (!show || !trackL || !trackR || reduced) return
-
-    const step = 100 / N
-    const travel = step * (N - 1) // e.g. 66.666… for 3 stages
+    if (!show || !trackL || !trackR) return
 
     /**
      * Map raw scroll 0–1 → stage position 0..(N-1) with a dwell on each stage
@@ -87,31 +86,41 @@ export function OriginSection() {
 
     const applyProgress = (p: number) => {
       const stage = stageFromScroll(p) // 0 .. N-1 (fractional during wipes)
-      const t = (N === 1 ? 0 : stage / (N - 1)) as number
+      const t = N === 1 ? 0 : stage / (N - 1)
       // One progress drives both tracks so the split image never desyncs
-      gsap.set(trackL, { yPercent: -travel * t })
-      gsap.set(trackR, { yPercent: -travel * (1 - t) })
+      gsap.set(trackL, { yPercent: -TRAVEL * t, force3D: true })
+      gsap.set(trackR, { yPercent: -TRAVEL * (1 - t), force3D: true })
       setCur(Math.min(N - 1, Math.round(stage)))
     }
 
+    // Always land on stage 1 (both columns) — even if pin/scrub is skipped
     applyProgress(0)
 
-    const isTouch =
-      window.matchMedia("(hover: none), (pointer: coarse)").matches ||
-      "ontouchstart" in window
+    if (reduced) return
 
-    // Extra scroll length so each hold + wipe has room (3 holds + 2 moves)
+    const isCoarse = window.matchMedia(
+      "(hover: none), (pointer: coarse)",
+    ).matches
+
+    // Stabilize mobile URL-bar / touch scrolling so the pin matches desktop
+    if (isCoarse) {
+      ScrollTrigger.normalizeScroll(true)
+    }
+
+    // Extra scroll length so each hold + wipe has room (same on all devices)
     const scrollBeats = N + (N - 1)
 
     const st = ScrollTrigger.create({
       trigger: show,
       start: "top top",
-      end: `+=${scrollBeats * 55}%`,
+      end: `+=${scrollBeats * 70}%`,
       pin: true,
-      scrub: isTouch ? 0.3 : 0.45,
+      scrub: 0.45,
       anticipatePin: 1,
       invalidateOnRefresh: true,
-      pinType: isTouch ? "transform" : "fixed",
+      // Same pin model as desktop — transform pin was leaving a long black gap
+      // and the reversed right track stuck on image 3
+      pinType: "fixed",
       onUpdate(self) {
         applyProgress(self.progress)
       },
@@ -119,15 +128,20 @@ export function OriginSection() {
 
     const onResize = () => ScrollTrigger.refresh()
     window.addEventListener("resize", onResize)
+    window.visualViewport?.addEventListener("resize", onResize)
     const raf = requestAnimationFrame(() => ScrollTrigger.refresh())
-    const t = window.setTimeout(() => ScrollTrigger.refresh(), 300)
+    const timers = [80, 300, 700].map((ms) =>
+      window.setTimeout(() => ScrollTrigger.refresh(), ms),
+    )
 
     return () => {
       cancelAnimationFrame(raf)
-      window.clearTimeout(t)
+      timers.forEach((id) => window.clearTimeout(id))
       window.removeEventListener("resize", onResize)
+      window.visualViewport?.removeEventListener("resize", onResize)
       st.kill()
-      gsap.set([trackL, trackR], { clearProps: "transform" })
+      if (isCoarse) ScrollTrigger.normalizeScroll(false)
+      applyProgress(0)
     }
   }, [])
 
@@ -169,15 +183,18 @@ export function OriginSection() {
           <div
             ref={trackLRef}
             className={styles.wtrack}
-            style={{ height: `${N * 100}%` }}
+            style={{
+              height: `${N * 100}%`,
+              transform: "translate3d(0, 0, 0)",
+            }}
           >
-            {STAGES.map((p, i) => (
+            {STAGES.map((p) => (
               <div
                 key={`l-${p.id}`}
                 className={styles.wcell}
                 style={{ height: `${100 / N}%` }}
               >
-                <StagePanel stage={p} index={i} hovered={hovId === p.id} />
+                <StagePanel stage={p} hovered={hovId === p.id} />
               </div>
             ))}
           </div>
@@ -187,20 +204,21 @@ export function OriginSection() {
           <div
             ref={trackRRef}
             className={styles.wtrack}
-            style={{ height: `${N * 100}%` }}
+            style={{
+              height: `${N * 100}%`,
+              // Reversed stack: offset so stage 1 (Highlands) shows before JS runs
+              transform: `translate3d(0, -${TRAVEL}%, 0)`,
+            }}
           >
-            {reversed.map((p) => {
-              const i = STAGES.findIndex((x) => x.id === p.id)
-              return (
-                <div
-                  key={`r-${p.id}`}
-                  className={styles.wcell}
-                  style={{ height: `${100 / N}%` }}
-                >
-                  <StagePanel stage={p} index={i} hovered={hovId === p.id} />
-                </div>
-              )
-            })}
+            {reversed.map((p) => (
+              <div
+                key={`r-${p.id}`}
+                className={styles.wcell}
+                style={{ height: `${100 / N}%` }}
+              >
+                <StagePanel stage={p} hovered={hovId === p.id} />
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -210,11 +228,9 @@ export function OriginSection() {
 
 function StagePanel({
   stage,
-  index,
   hovered,
 }: {
   stage: (typeof STAGES)[number]
-  index: number
   hovered: boolean
 }) {
   return (
@@ -231,7 +247,9 @@ function StagePanel({
         alt={stage.alt}
         draggable={false}
         decoding="async"
-        loading={index === 0 ? "eager" : "lazy"}
+        // All stages load eagerly — lazy + transform tracks never fired on mobile
+        loading="eager"
+        fetchPriority="low"
         style={{ objectPosition: stage.objectPosition }}
       />
       <span className={styles.wfullUi}>
