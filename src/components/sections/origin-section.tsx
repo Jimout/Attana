@@ -62,8 +62,13 @@ export function OriginSection() {
 
     if (!show || !trackL || !trackR) return
 
+    const isCoarse = window.matchMedia(
+      "(hover: none), (pointer: coarse)",
+    ).matches
+
     const stageFromScroll = (p: number) => {
-      const holdW = 1.4
+      // Slightly shorter holds on touch so stage 03 doesn’t linger into a long black pin
+      const holdW = isCoarse ? 1.0 : 1.4
       const moveW = 1
       const total = N * holdW + (N - 1) * moveW
       let u = gsap.utils.clamp(0, 1, p) * total
@@ -92,23 +97,19 @@ export function OriginSection() {
 
     if (reduced) return
 
-    const isCoarse = window.matchMedia(
-      "(hover: none), (pointer: coarse)",
-    ).matches
-
-    const scrollBeats = N + (N - 1)
-    // Touch: shorter pin + near-instant scrub so exit isn’t black → 03 again
-    const endMul = isCoarse ? 55 : 70
+    // Pin length: classic (N-1) viewports on touch — ends soon after 03 locks (no long black)
+    const endDistance = isCoarse
+      ? `+=${(N - 1) * 100}%`
+      : `+=${(N + (N - 1)) * 70}%`
     const scrubAmt = isCoarse ? 0.05 : 0.45
 
     const st = ScrollTrigger.create({
       trigger: show,
       start: "top top",
-      end: `+=${scrollBeats * endMul}%`,
+      end: endDistance,
       pin: true,
       scrub: scrubAmt,
       anticipatePin: 1,
-      // Avoid rebuilding pin on mobile URL-bar resize (can desync scrub)
       invalidateOnRefresh: !isCoarse,
       pinType: "fixed",
       onUpdate(self) {
