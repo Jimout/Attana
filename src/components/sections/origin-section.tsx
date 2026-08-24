@@ -97,77 +97,55 @@ export function OriginSection() {
     ).matches
 
     const scrollBeats = N + (N - 1)
-    // Shorter pin travel on touch — less empty black after 03 before next section
+    // Touch: shorter pin + near-instant scrub so exit isn’t black → 03 again
     const endMul = isCoarse ? 55 : 70
-
-    /** After leaving forward, keep stage 3 locked so momentum can’t re-scrub 03 */
-    let exitLocked = false
+    const scrubAmt = isCoarse ? 0.05 : 0.45
 
     const st = ScrollTrigger.create({
       trigger: show,
       start: "top top",
       end: `+=${scrollBeats * endMul}%`,
       pin: true,
-      scrub: isCoarse ? true : 0.45,
+      scrub: scrubAmt,
       anticipatePin: 1,
+      // Avoid rebuilding pin on mobile URL-bar resize (can desync scrub)
       invalidateOnRefresh: !isCoarse,
-      // transform unpin is more reliable on iOS than fixed (avoids black → 03 bounce)
-      pinType: isCoarse ? "transform" : "fixed",
-      fastScrollEnd: true,
-      preventOverlaps: true,
+      pinType: "fixed",
       onUpdate(self) {
-        if (exitLocked && self.direction >= 0) {
-          applyProgress(1)
-          return
-        }
         applyProgress(self.progress)
       },
-      onLeave: () => {
-        exitLocked = true
-        applyProgress(1)
-      },
-      onEnterBack: () => {
-        exitLocked = false
-      },
-      onLeaveBack: () => {
-        exitLocked = false
-        applyProgress(0)
-      },
+      onLeave: () => applyProgress(1),
+      onLeaveBack: () => applyProgress(0),
     })
 
-    const refreshIfSafe = () => {
-      // Never rebuild pin metrics while the user is past Origin on mobile
-      if (isCoarse && (exitLocked || (!st.isActive && st.progress >= 1))) {
-        applyProgress(1)
-        return
-      }
+    const onResize = () => {
+      if (isCoarse) return
       ScrollTrigger.refresh()
-      if (exitLocked) {
-        applyProgress(1)
-        return
-      }
       if (st.isActive) applyProgress(st.progress)
     }
-
-    const onWindowResize = () => {
-      if (isCoarse) return
-      refreshIfSafe()
-    }
     const onOrientation = () => {
-      exitLocked = false
-      refreshIfSafe()
+      ScrollTrigger.refresh()
+      if (st.isActive) applyProgress(st.progress)
+      else if (st.progress >= 1) applyProgress(1)
+      else applyProgress(0)
     }
 
-    window.addEventListener("resize", onWindowResize)
+    window.addEventListener("resize", onResize)
     window.addEventListener("orientationchange", onOrientation)
 
-    const raf = requestAnimationFrame(() => refreshIfSafe())
-    const boot = window.setTimeout(() => refreshIfSafe(), isCoarse ? 200 : 300)
+    const raf = requestAnimationFrame(() => {
+      ScrollTrigger.refresh()
+      if (st.isActive) applyProgress(st.progress)
+    })
+    const boot = window.setTimeout(() => {
+      ScrollTrigger.refresh()
+      if (st.isActive) applyProgress(st.progress)
+    }, 300)
 
     return () => {
       cancelAnimationFrame(raf)
       window.clearTimeout(boot)
-      window.removeEventListener("resize", onWindowResize)
+      window.removeEventListener("resize", onResize)
       window.removeEventListener("orientationchange", onOrientation)
       st.kill()
       applyProgress(0)
