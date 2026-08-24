@@ -84,7 +84,8 @@ export function OriginSection() {
       const cellH = show.clientHeight
       gsap.set(trackL, { y: -cellH * stage, force3D: true })
       gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
-      setCur(Math.min(N - 1, Math.round(stage)))
+      const next = Math.min(N - 1, Math.round(stage))
+      setCur((c) => (c === next ? c : next))
     }
 
     applyProgress(0)
@@ -95,10 +96,6 @@ export function OriginSection() {
       "(hover: none), (pointer: coarse)",
     ).matches
 
-    if (isCoarse) {
-      ScrollTrigger.normalizeScroll(true)
-    }
-
     const scrollBeats = N + (N - 1)
 
     const st = ScrollTrigger.create({
@@ -106,39 +103,47 @@ export function OriginSection() {
       start: "top top",
       end: `+=${scrollBeats * 70}%`,
       pin: true,
-      scrub: 0.45,
+      // Tighter scrub on touch so pin exit doesn’t rubber-band back into stage 3
+      scrub: isCoarse ? true : 0.45,
       anticipatePin: 1,
-      invalidateOnRefresh: true,
+      // Mobile URL-bar resize must NOT rebuild the pin mid-gesture
+      invalidateOnRefresh: !isCoarse,
       pinType: "fixed",
+      fastScrollEnd: true,
+      preventOverlaps: true,
       onUpdate(self) {
         applyProgress(self.progress)
       },
+      onLeave: () => applyProgress(1),
+      onLeaveBack: () => applyProgress(0),
     })
 
-    const onResize = () => {
+    const refreshIfSafe = () => {
       ScrollTrigger.refresh()
-      applyProgress(st.progress)
+      // Only re-apply while the pin is active — avoids snapping back to 03 after exit
+      if (st.isActive) applyProgress(st.progress)
     }
-    window.addEventListener("resize", onResize)
-    window.visualViewport?.addEventListener("resize", onResize)
-    const raf = requestAnimationFrame(() => {
-      ScrollTrigger.refresh()
-      applyProgress(st.progress)
-    })
-    const timers = [80, 300, 700].map((ms) =>
-      window.setTimeout(() => {
-        ScrollTrigger.refresh()
-        applyProgress(st.progress)
-      }, ms),
-    )
+
+    // Desktop: normal resize. Mobile: orientation only (not URL-bar visualViewport).
+    const onWindowResize = () => {
+      if (isCoarse) return
+      refreshIfSafe()
+    }
+    const onOrientation = () => refreshIfSafe()
+
+    window.addEventListener("resize", onWindowResize)
+    window.addEventListener("orientationchange", onOrientation)
+
+    const raf = requestAnimationFrame(() => refreshIfSafe())
+    // One late measure after layout — not a burst of refreshes that re-catch the pin
+    const boot = window.setTimeout(() => refreshIfSafe(), isCoarse ? 200 : 300)
 
     return () => {
       cancelAnimationFrame(raf)
-      timers.forEach((id) => window.clearTimeout(id))
-      window.removeEventListener("resize", onResize)
-      window.visualViewport?.removeEventListener("resize", onResize)
+      window.clearTimeout(boot)
+      window.removeEventListener("resize", onWindowResize)
+      window.removeEventListener("orientationchange", onOrientation)
       st.kill()
-      if (isCoarse) ScrollTrigger.normalizeScroll(false)
       applyProgress(0)
     }
   }, [])
