@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { motion } from "motion/react"
 
-const HERO_IMAGE = "/images/he.jpg"
+const HERO_IMAGE = "/images/hero/hero.jpg"
 
 export function Hero() {
   return (

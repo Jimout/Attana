@@ -10,7 +10,7 @@ const COFFEES = [
     name: "Yirgacheffe",
     meta: "Ethiopia · Light roast",
     note: "Floral, citrus and a clean honeyed finish.",
-    image: "/images/f1.jpg",
+    image: "/images/featured/f1.jpg",
     alt: "Yirgacheffe roasted coffee beans",
   },
   {
@@ -18,7 +18,7 @@ const COFFEES = [
     name: "Sidamo",
     meta: "Ethiopia · Medium roast",
     note: "Berry sweetness, cocoa and soft tea-like body.",
-    image: "/images/f2.jpg",
+    image: "/images/featured/f2.jpg",
     alt: "Cup of Sidamo coffee",
   },
   {
@@ -26,7 +26,7 @@ const COFFEES = [
     name: "Harrar",
     meta: "Ethiopia · Medium-dark roast",
     note: "Winey fruit, spice and a bold lingering body.",
-    image: "/images/f3.jpg",
+    image: "/images/featured/f3.jpg",
     alt: "Freshly poured Harrar coffee",
   },
 ] as const

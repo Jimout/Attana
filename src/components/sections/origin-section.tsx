@@ -14,7 +14,7 @@ const STAGES = [
     name: "Highlands",
     title: ["ETHIOPIAN", "HIGHLANDS"],
     tags: ["Altitude", "Heirloom", "Terroir"],
-    img: "/images/origin1.jpg",
+    img: "/images/origin/origin1.jpg",
     alt: "Ethiopian coffee highlands at altitude",
   },
   {
@@ -22,7 +22,7 @@ const STAGES = [
     name: "Farmers",
     title: ["SMALLHOLDER", "FARMERS"],
     tags: ["Hand-picked", "Cooperatives", "Craft"],
-    img: "/images/origin2.jpg",
+    img: "/images/origin/origin2.jpg",
     alt: "Smallholder farmers picking coffee cherries",
   },
   {
@@ -30,7 +30,7 @@ const STAGES = [
     name: "Cherry to cup",
     title: ["CHERRY", "→ CUP"],
     tags: ["Wash", "Dry", "Roast"],
-    img: "/images/origin3.jpg",
+    img: "/images/origin/origin3.jpg",
     alt: "Coffee journey from cherry to cup",
   },
 ] as const
@@ -69,9 +69,10 @@ export function OriginSection() {
       scrollTrigger: {
         trigger: show,
         start: "top top",
-        end: `+=${N * 100}%`,
+        // Shorter pin distance = stages advance with less scrolling
+        end: `+=${N * 55}%`,
         pin: true,
-        scrub: isTouch ? 0.35 : 0.6,
+        scrub: isTouch ? 0.2 : 0.35,
         anticipatePin: 1,
         invalidateOnRefresh: true,
         // iOS Safari: transform pin is more reliable than fixed
@@ -84,23 +85,23 @@ export function OriginSection() {
     })
 
     for (let i = 0; i < N - 1; i++) {
-      tl.to({}, { duration: 0.55 })
+      tl.to({}, { duration: 0.25 })
         .to(trackL, {
           yPercent: -step * (i + 1),
-          duration: 1,
+          duration: 0.85,
           ease: "power3.inOut",
         })
         .to(
           trackR,
           {
             yPercent: -step * (N - 1 - (i + 1)),
-            duration: 1,
+            duration: 0.85,
             ease: "power3.inOut",
           },
           "<",
         )
     }
-    tl.to({}, { duration: 0.55 })
+    tl.to({}, { duration: 0.25 })
 
     const onResize = () => ScrollTrigger.refresh()
     window.addEventListener("resize", onResize)

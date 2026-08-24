@@ -40,7 +40,7 @@ npm start
 | `src/app/page.tsx` | Page section order |
 | `src/app/globals.css` | Brand colors, fonts, shared section styles |
 | `src/components/` | Header, hero, sections, footer |
-| `public/images/` | Site photos (hero, mosaic, coffee, origin, footer) |
+| `public/images/` | Site photos, grouped by section |
 
 ### Brand tokens
 
@@ -53,7 +53,15 @@ Colors and type live in `src/app/globals.css` under `--attana-*` and `--font-*`.
 
 ### Replacing images
 
-Drop files into `public/images/` using the same names the code already references (for example `he.jpg`, `1.jpg`–`7.jpg`, `f1.jpg`–`f3.jpg`, `origin1.jpg`–`origin3.jpg`, `hero.jpg`).
+Swap files in these folders (keep the same filenames):
+
+| Folder | Files |
+|--------|--------|
+| `public/images/hero/` | `hero.jpg` |
+| `public/images/mosaic/` | `coffee1.jpg`–`coffee7.jpg` |
+| `public/images/featured/` | `f1.jpg`–`f3.jpg` |
+| `public/images/origin/` | `origin1.jpg`–`origin3.jpg` |
+| `public/images/footer/` | `brew.jpg` |
 
 ---
 

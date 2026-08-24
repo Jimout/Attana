@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import type { ReactNode } from "react"
 import { motion } from "motion/react"
 
@@ -22,7 +21,7 @@ const TICKER = [
   "From cherry to cup",
 ] as const
 
-const STAGE_IMAGE = "/images/hero.jpg"
+const STAGE_IMAGE = "/images/footer/brew.jpg"
 
 function TickerGlyph() {
   return (
@@ -77,20 +76,30 @@ export function SiteFooter() {
       style={{ background: "var(--attana-bg)" }}
       aria-label="Footer"
     >
-      <div className="relative w-full overflow-hidden">
-        <Image
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ height: "clamp(200px, 36vh, 320px)" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={STAGE_IMAGE}
           alt=""
           aria-hidden
-          fill
-          sizes="100vw"
-          className="scale-105 object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ objectPosition: "center top" }}
+          loading="eager"
+          decoding="async"
         />
-        <div className="absolute inset-0 bg-[var(--attana-bg)]/35" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, transparent 0%, var(--attana-overlay-soft) 55%, var(--attana-overlay) 100%)",
+          }}
+        />
 
         <div
-          className="relative z-10 flex items-center justify-center py-8 text-center lg:py-10"
-          style={{ paddingInline: "var(--attana-pad-x)" }}
+          className="relative z-10 flex h-full items-center justify-center px-[var(--attana-pad-x)] text-center"
         >
           <motion.h2
             initial={{ opacity: 0, y: 20 }}

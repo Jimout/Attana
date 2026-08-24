@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import Image from "next/image"
 import { useRef, useState } from "react"
 import {
   motion,
@@ -17,17 +16,17 @@ type MediaCell =
 /** Attana coffee mosaic — same 2 / 3 / 2 column layout as the current design */
 const COLUMNS: MediaCell[][] = [
   [
-    { type: "image", src: "/images/1.jpg" },
-    { type: "image", src: "/images/4.jpg" },
+    { type: "image", src: "/images/mosaic/coffee1.jpg" },
+    { type: "image", src: "/images/mosaic/coffee4.jpg" },
   ],
   [
-    { type: "image", src: "/images/3.jpg" },
-    { type: "image", src: "/images/2.jpg" },
-    { type: "image", src: "/images/5.jpg" },
+    { type: "image", src: "/images/mosaic/coffee3.jpg" },
+    { type: "image", src: "/images/mosaic/coffee2.jpg" },
+    { type: "image", src: "/images/mosaic/coffee5.jpg" },
   ],
   [
-    { type: "image", src: "/images/6.jpg" },
-    { type: "image", src: "/images/7.jpg" },
+    { type: "image", src: "/images/mosaic/coffee6.jpg" },
+    { type: "image", src: "/images/mosaic/coffee7.jpg" },
   ],
 ]
 
@@ -56,13 +55,20 @@ function Cell({ cell }: { cell: MediaCell }) {
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <Image
+        // Native img — full-resolution source for sharp zoom (no optimizer resize)
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={cell.src}
           alt=""
-          fill
-          sizes="(max-width: 768px) 50vw, 34vw"
-          className="object-cover"
           draggable={false}
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{
+            imageRendering: "auto",
+            // Keep a crisp GPU layer while the mosaic scales
+            backfaceVisibility: "hidden",
+            transform: "translateZ(0)",
+          }}
         />
       )}
     </div>
@@ -177,8 +183,9 @@ export function MosaicSection() {
     offset: ["start start", "end end"],
   })
 
-  // Mosaic zooms out and darkens as the sticky stage scrolls
-  const mediaScale = useTransform(scrollYProgress, [0, 0.85], [3.1, 1])
+  // Lay out mosaic at ZOOM× size, then scale DOWN (never up) so zoom stays sharp
+  const ZOOM = 3.1
+  const mediaScale = useTransform(scrollYProgress, [0, 0.85], [1, 1 / ZOOM])
   const overlayOpacity = useTransform(scrollYProgress, [0, 0.85], [0, 0.65])
 
   return (
@@ -198,27 +205,36 @@ export function MosaicSection() {
           className="relative flex h-full w-full flex-1 flex-col items-center justify-center overflow-hidden bg-[var(--attana-bg)]"
           style={{ borderRadius: 12 }}
         >
-          <motion.div
-            className="absolute inset-0 flex flex-row items-center justify-center gap-[3px] will-change-transform"
-            style={{ scale: mediaScale, transformOrigin: "50% 50%" }}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2"
+            style={{
+              width: `${ZOOM * 100}%`,
+              height: `${ZOOM * 100}%`,
+              translate: "-50% -50%",
+            }}
           >
-            {COLUMNS.map((column, columnIndex) => (
-              <div
-                key={columnIndex}
-                className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px]"
-              >
-                {column.map((cell, cellIndex) => (
-                  <Cell key={`${columnIndex}-${cellIndex}`} cell={cell} />
-                ))}
-              </div>
-            ))}
-
-            {/* Dark overlay for text readability */}
             <motion.div
-              className="pointer-events-none absolute inset-0 z-[1] bg-[var(--attana-bg)]"
-              style={{ opacity: overlayOpacity }}
-            />
-          </motion.div>
+              className="flex h-full w-full flex-row items-center justify-center gap-[3px] will-change-transform"
+              style={{ scale: mediaScale, transformOrigin: "50% 50%" }}
+            >
+              {COLUMNS.map((column, columnIndex) => (
+                <div
+                  key={columnIndex}
+                  className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px]"
+                >
+                  {column.map((cell, cellIndex) => (
+                    <Cell key={`${columnIndex}-${cellIndex}`} cell={cell} />
+                  ))}
+                </div>
+              ))}
+
+              {/* Dark overlay for text readability */}
+              <motion.div
+                className="pointer-events-none absolute inset-0 z-[1] bg-[var(--attana-bg)]"
+                style={{ opacity: overlayOpacity }}
+              />
+            </motion.div>
+          </div>
 
           {/* Headline reveal over mosaic */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-[2] grid w-full max-w-[1920px] -translate-x-1/2 -translate-y-1/2 grid-cols-1 gap-5 px-[30px] md:grid-cols-4">
