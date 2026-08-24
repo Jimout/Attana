@@ -259,31 +259,52 @@
   }
 }
 
-/* Desktop/tablet split stays as-is; phone uses its own full stack */
+/* Desktop/tablet split */
 .split {
   display: contents;
 }
 
-.mobileStack {
+/*
+  Very small phones (≤480px): three normal stacked stages.
+  No sticky scrub / tall runway.
+*/
+.phoneStatic {
   display: none;
 }
 
-.mfull {
+.phoneHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: clamp(1rem, 3vh, 1.5rem) var(--pad);
+}
+
+.phoneCard {
+  position: relative;
+  width: 100%;
+  height: min(72vh, 560px);
+  overflow: hidden;
+  background: var(--black);
+}
+
+.phoneCardImg {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
-.mfull::after {
+.phoneCard::after {
   content: "";
   position: absolute;
   inset: 0;
   background: var(--attana-overlay);
+  pointer-events: none;
 }
 
-.mfullUi {
+.phoneCardUi {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -291,71 +312,41 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(12px, 2vh, 20px);
+  gap: clamp(10px, 1.8vh, 18px);
   padding: 0 var(--pad);
   text-align: center;
   pointer-events: none;
   box-sizing: border-box;
 }
 
-.mfullName {
+.phoneCardNum {
+  font-family: var(--font-plex), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--grey);
+}
+
+.phoneCardNum b {
+  color: var(--orange);
+}
+
+.phoneCardName {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   line-height: 0.95;
-  font-size: clamp(36px, 11vw, 64px);
+  font-size: clamp(32px, 10vw, 56px);
   color: var(--grey);
 }
 
-/*
-  Very small phones (≤480px): one full-bleed stack.
-  JS sets [data-origin-phone="true"] so layout matches scrub path.
-*/
-.stickyScroll[data-origin-phone="true"] .split {
-  display: none;
-}
-
-.stickyScroll[data-origin-phone="true"] .mobileStack {
-  display: block;
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.stickyScroll[data-origin-phone="true"] .mtrack {
-  display: flex;
-  flex-direction: column;
-}
-
-.stickyScroll[data-origin-phone="true"] .mcell {
-  position: relative;
-  flex: 0 0 auto;
-  width: 100%;
-  overflow: hidden;
-}
-
 @media (max-width: 480px) {
-  .split {
-    display: none;
-  }
-
-  .mobileStack {
+  .phoneStatic {
     display: block;
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
   }
 
-  .mtrack {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .mcell {
-    position: relative;
-    flex: 0 0 auto;
-    width: 100%;
-    overflow: hidden;
+  .stickyScroll {
+    display: none;
   }
 
   .wfullTags {

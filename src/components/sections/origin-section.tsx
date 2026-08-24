@@ -7,9 +7,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import styles from "./origin-section.module.css"
 
 /**
- * Origin / Craft — Catalin Featured Work scrub.
- * Desktop: opposite-column split (unchanged).
- * Very small phones (≤480px): full-bleed stack with equal 01/02/03 stops.
+ * Origin / Craft — Catalin Featured Work scrub on desktop/tablet.
+ * Very small phones (≤480px): three normal stacked stages, no scrub.
  */
 const STAGES = [
   {
@@ -43,12 +42,7 @@ const STAGES = [
 
 const N: number = STAGES.length
 /** Desktop runway: 1 sticky + (N-1) travel */
-const SCROLL_VH_DESKTOP = N
-/**
- * Tiny phone: shorter runway so 03 doesn’t crawl.
- * Travel ≈ 3.25 vh for hold/wipe map below.
- */
-const SCROLL_VH_PHONE = 4.25
+const SCROLL_VH = N
 /** Very small devices only — must match CSS */
 const PHONE_MQ = "(max-width: 480px)"
 
@@ -61,7 +55,6 @@ export function OriginSection() {
   const showRef = useRef<HTMLDivElement>(null)
   const trackLRef = useRef<HTMLDivElement>(null)
   const trackRRef = useRef<HTMLDivElement>(null)
-  const trackMRef = useRef<HTMLDivElement>(null)
   const [cur, setCur] = useState(0)
 
   useEffect(() => {
@@ -72,41 +65,26 @@ export function OriginSection() {
       "(hover: none), (pointer: coarse)",
     ).matches
     const phoneMq = window.matchMedia(PHONE_MQ)
+
+    // Tiny phone: static stacked layout — no sticky scrub
+    if (phoneMq.matches) return
+
     const scroller = scrollRef.current
     const show = showRef.current
     const trackL = trackLRef.current
     const trackR = trackRRef.current
-    const trackM = trackMRef.current
 
-    if (!scroller || !show || !trackL || !trackR || !trackM) return
+    if (!scroller || !show || !trackL || !trackR) return
 
-    const isPhone = () => phoneMq.matches
-
-    const syncPhoneUi = () => {
-      const phone = isPhone()
-      scroller.dataset.originPhone = phone ? "true" : "false"
-      scroller.style.setProperty(
-        "--origin-scroll-vh",
-        String(phone ? SCROLL_VH_PHONE : SCROLL_VH_DESKTOP),
-      )
-    }
-
-    /**
-     * Desktop: Catalin hold/wipe (unchanged).
-     * Tiny phone: longer 01, normal 02, short 03 + shorter runway.
-     */
     const stageFromScroll = (p: number) => {
       if (N <= 1) return 0
+      const holdW = isCoarse ? 1.2 : 1.4
       const moveW = 1
-      const holds = isPhone()
-        ? [1.55, 1.1, 0.55]
-        : Array.from({ length: N }, () => (isCoarse ? 1.2 : 1.4))
-      const total = holds.reduce((a, b) => a + b, 0) + (N - 1) * moveW
+      const total = N * holdW + (N - 1) * moveW
       let u = gsap.utils.clamp(0, 1, p) * total
       for (let i = 0; i < N; i++) {
-        const h = holds[i]!
-        if (u <= h) return i
-        u -= h
+        if (u <= holdW) return i
+        u -= holdW
         if (i < N - 1) {
           if (u <= moveW) return i + u / moveW
           u -= moveW
@@ -115,10 +93,6 @@ export function OriginSection() {
       return N - 1
     }
 
-    /**
-     * Lock slide height against iOS URL-bar jitter so scrub stays on time.
-     * Only relock on real size jumps (orientation / large resize).
-     */
     let lockedH = 0
     const cellHeight = () => {
       const h = Math.max(1, Math.round(show.clientHeight))
@@ -147,20 +121,14 @@ export function OriginSection() {
     const applyProgress = (p: number) => {
       const stage = stageFromScroll(p)
       const cellH = cellHeight()
-      if (isPhone()) {
-        sizeTrack(trackM, cellH)
-        gsap.set(trackM, { y: -cellH * stage, force3D: true })
-      } else {
-        sizeTrack(trackL, cellH)
-        sizeTrack(trackR, cellH)
-        gsap.set(trackL, { y: -cellH * stage, force3D: true })
-        gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
-      }
+      sizeTrack(trackL, cellH)
+      sizeTrack(trackR, cellH)
+      gsap.set(trackL, { y: -cellH * stage, force3D: true })
+      gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
       const next = Math.min(N - 1, Math.round(stage))
       setCur((c) => (c === next ? c : next))
     }
 
-    syncPhoneUi()
     applyProgress(0)
 
     if (reduced) return
@@ -169,7 +137,6 @@ export function OriginSection() {
       trigger: scroller,
       start: "top top",
       end: "bottom bottom",
-      // Touch: immediate scrub so stages stay on time with the finger
       scrub: isCoarse ? true : 0.35,
       invalidateOnRefresh: !isCoarse,
       onUpdate(self) {
@@ -179,41 +146,35 @@ export function OriginSection() {
       onLeaveBack: () => applyProgress(0),
     })
 
-    const softRefresh = () => {
-      syncPhoneUi()
+    const onResize = () => {
+      if (isCoarse) return
+      lockedH = 0
+      ScrollTrigger.refresh()
+      applyProgress(st.progress)
+    }
+    const onOrientation = () => {
+      lockedH = 0
       ScrollTrigger.refresh()
       applyProgress(st.progress)
     }
 
-    const hardRelayout = () => {
-      lockedH = 0
-      softRefresh()
-    }
-
-    const onResize = () => {
-      if (isCoarse) return
-      softRefresh()
-    }
-    const onOrientation = () => {
-      window.setTimeout(hardRelayout, 120)
-    }
-    const onPhoneChange = () => {
-      hardRelayout()
-    }
-
     window.addEventListener("resize", onResize)
     window.addEventListener("orientationchange", onOrientation)
-    phoneMq.addEventListener("change", onPhoneChange)
 
-    const raf = requestAnimationFrame(() => softRefresh())
-    const boot = window.setTimeout(() => softRefresh(), 300)
+    const raf = requestAnimationFrame(() => {
+      ScrollTrigger.refresh()
+      applyProgress(st.progress)
+    })
+    const boot = window.setTimeout(() => {
+      ScrollTrigger.refresh()
+      applyProgress(st.progress)
+    }, 300)
 
     return () => {
       cancelAnimationFrame(raf)
       window.clearTimeout(boot)
       window.removeEventListener("resize", onResize)
       window.removeEventListener("orientationchange", onOrientation)
-      phoneMq.removeEventListener("change", onPhoneChange)
       st.kill()
       applyProgress(0)
     }
@@ -227,12 +188,65 @@ export function OriginSection() {
       className={styles.work}
       aria-label="Origin and Craft"
     >
+      {/* Very small phones: normal stacked stages, no scrub */}
+      <div className={styles.phoneStatic}>
+        <div className={styles.phoneHead}>
+          <span className={`${styles.lbl} ${styles.lblPlain}`}>
+            <span className="attana-label-index">(03)</span>
+            <span style={{ marginLeft: 12 }}>Origin / Craft</span>
+          </span>
+          <span className={`${styles.lbl} ${styles.lblPlain} ${styles.num}`}>
+            03 — stages
+          </span>
+        </div>
+        {STAGES.map((stage, i) => (
+          <article
+            key={stage.id}
+            className={styles.phoneCard}
+            aria-label={`${padIndex(i)} — ${stage.alt}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className={styles.phoneCardImg}
+              src={stage.img}
+              alt={stage.alt}
+              draggable={false}
+              decoding="async"
+              loading={i === 0 ? "eager" : "lazy"}
+              style={{ objectPosition: stage.objectPosition }}
+            />
+            <div className={styles.phoneCardUi}>
+              <span className={`${styles.phoneCardNum} ${styles.num}`}>
+                <b>{padIndex(i)}</b> / 03
+              </span>
+              <span className={styles.wfullTags}>
+                {stage.tags.map((t, ti) => (
+                  <span key={t}>
+                    {ti > 0 ? <i>·</i> : null}
+                    {t}
+                  </span>
+                ))}
+              </span>
+              <span className={styles.phoneCardName}>
+                {stage.title.map((line, li) => (
+                  <span key={line}>
+                    {li > 0 ? <br /> : null}
+                    {line}
+                  </span>
+                ))}
+              </span>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {/* Desktop / tablet: Catalin sticky scrub — unchanged */}
       <div
         ref={scrollRef}
         className={styles.stickyScroll}
         style={
           {
-            ["--origin-scroll-vh" as string]: String(SCROLL_VH_DESKTOP),
+            ["--origin-scroll-vh" as string]: String(SCROLL_VH),
           } as React.CSSProperties
         }
       >
@@ -256,7 +270,6 @@ export function OriginSection() {
           </span>
           <span className={styles.hint}>Keep scrolling</span>
 
-          {/* Desktop / tablet: Catalin split — unchanged */}
           <div className={styles.split}>
             <div className={`${styles.wcol} ${styles.wcolL}`}>
               <div
@@ -297,17 +310,6 @@ export function OriginSection() {
               </div>
             </div>
           </div>
-
-          {/* Phone only: full-bleed stack, same scrub */}
-          <div className={styles.mobileStack}>
-            <div ref={trackMRef} className={`${styles.wtrack} ${styles.mtrack}`}>
-              {STAGES.map((p) => (
-                <div key={`m-${p.id}`} className={`${styles.wcell} ${styles.mcell}`}>
-                  <MobilePanel stage={p} />
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -343,48 +345,6 @@ function StagePanel({ stage }: { stage: (typeof STAGES)[number] }) {
           ))}
         </span>
         <span className={styles.wfullName}>
-          {stage.title.map((line, i) => (
-            <span key={line}>
-              {i > 0 ? <br /> : null}
-              {line}
-            </span>
-          ))}
-        </span>
-      </span>
-    </div>
-  )
-}
-
-/** Full-viewport panel for phone stack (not a 200% seam crop). */
-function MobilePanel({ stage }: { stage: (typeof STAGES)[number] }) {
-  return (
-    <div
-      className={styles.mfull}
-      data-pid={stage.id}
-      role="img"
-      aria-label={stage.alt}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        className={styles.wfullImg}
-        src={stage.img}
-        alt=""
-        draggable={false}
-        decoding="async"
-        loading="eager"
-        fetchPriority="low"
-        style={{ objectPosition: stage.objectPosition }}
-      />
-      <span className={styles.mfullUi} aria-hidden="true">
-        <span className={styles.wfullTags}>
-          {stage.tags.map((t, i) => (
-            <span key={t}>
-              {i > 0 ? <i>·</i> : null}
-              {t}
-            </span>
-          ))}
-        </span>
-        <span className={styles.mfullName}>
           {stage.title.map((line, i) => (
             <span key={line}>
               {i > 0 ? <br /> : null}
