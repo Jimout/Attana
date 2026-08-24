@@ -6,7 +6,13 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 
 import styles from "./origin-section.module.css"
 
-/** Origin / Craft — dual-column scrub stages */
+/**
+ * Origin / Craft — Catalin Featured Work scrub:
+ * - Left stack: origin1 → origin2 → origin3
+ * - Right stack: reversed origin3 → origin2 → origin1
+ * - Opposite vertical motion so when locked, both halves are the same
+ *   image cut (left 50% + right 50% of originN)
+ */
 const STAGES = [
   {
     id: "highlands",
@@ -24,7 +30,6 @@ const STAGES = [
     tags: ["Hand-picked", "Cooperatives", "Craft"],
     img: "/images/origin/origin2.jpg",
     alt: "Smallholder farmers picking coffee cherries",
-    // Subject sits on the right — bias crop so the hand stays in frame
     objectPosition: "78% center",
   },
   {
@@ -39,8 +44,6 @@ const STAGES = [
 ] as const
 
 const N: number = STAGES.length
-/** yPercent travel so both columns land on the same stage index */
-const TRAVEL = (100 / N) * (N - 1)
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -51,7 +54,7 @@ export function OriginSection() {
   const trackLRef = useRef<HTMLDivElement>(null)
   const trackRRef = useRef<HTMLDivElement>(null)
   const [cur, setCur] = useState(0)
-  const [hovId, setHovId] = useState<string | null>(null)
+  const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -63,12 +66,9 @@ export function OriginSection() {
 
     if (!show || !trackL || !trackR) return
 
-    /**
-     * Map raw scroll 0–1 → stage position 0..(N-1) with a dwell on each stage
-     * so the second image actually pauses instead of only flashing mid-scrub.
-     */
+    /** Scroll 0–1 → stage 0..(N-1) with a dwell so each cut locks clearly */
     const stageFromScroll = (p: number) => {
-      const holdW = 1.2
+      const holdW = 1.4
       const moveW = 1
       const total = N * holdW + (N - 1) * moveW
       let u = gsap.utils.clamp(0, 1, p) * total
@@ -85,15 +85,20 @@ export function OriginSection() {
     }
 
     const applyProgress = (p: number) => {
-      const stage = stageFromScroll(p) // 0 .. N-1 (fractional during wipes)
-      const t = N === 1 ? 0 : stage / (N - 1)
-      // One progress drives both tracks so the split image never desyncs
-      gsap.set(trackL, { yPercent: -TRAVEL * t, force3D: true })
-      gsap.set(trackR, { yPercent: -TRAVEL * (1 - t), force3D: true })
+      const stage = stageFromScroll(p)
+      const cellH = show.clientHeight
+      // Catalin opposite scrub — integer stages: both halves = origin(stage+1)
+      gsap.set(trackL, {
+        y: -cellH * stage,
+        force3D: true,
+      })
+      gsap.set(trackR, {
+        y: -cellH * (N - 1 - stage),
+        force3D: true,
+      })
       setCur(Math.min(N - 1, Math.round(stage)))
     }
 
-    // Always land on stage 1 (both columns) — even if pin/scrub is skipped
     applyProgress(0)
 
     if (reduced) return
@@ -102,12 +107,10 @@ export function OriginSection() {
       "(hover: none), (pointer: coarse)",
     ).matches
 
-    // Stabilize mobile URL-bar / touch scrolling so the pin matches desktop
     if (isCoarse) {
       ScrollTrigger.normalizeScroll(true)
     }
 
-    // Extra scroll length so each hold + wipe has room (same on all devices)
     const scrollBeats = N + (N - 1)
 
     const st = ScrollTrigger.create({
@@ -118,20 +121,27 @@ export function OriginSection() {
       scrub: 0.45,
       anticipatePin: 1,
       invalidateOnRefresh: true,
-      // Same pin model as desktop — transform pin was leaving a long black gap
-      // and the reversed right track stuck on image 3
       pinType: "fixed",
       onUpdate(self) {
         applyProgress(self.progress)
       },
     })
 
-    const onResize = () => ScrollTrigger.refresh()
+    const onResize = () => {
+      ScrollTrigger.refresh()
+      applyProgress(st.progress)
+    }
     window.addEventListener("resize", onResize)
     window.visualViewport?.addEventListener("resize", onResize)
-    const raf = requestAnimationFrame(() => ScrollTrigger.refresh())
+    const raf = requestAnimationFrame(() => {
+      ScrollTrigger.refresh()
+      applyProgress(st.progress)
+    })
     const timers = [80, 300, 700].map((ms) =>
-      window.setTimeout(() => ScrollTrigger.refresh(), ms),
+      window.setTimeout(() => {
+        ScrollTrigger.refresh()
+        applyProgress(st.progress)
+      }, ms),
     )
 
     return () => {
@@ -146,6 +156,7 @@ export function OriginSection() {
   }, [])
 
   const reversed = [...STAGES].reverse()
+  const active = STAGES[cur] ?? STAGES[0]
 
   return (
     <section
@@ -167,12 +178,8 @@ export function OriginSection() {
         ref={showRef}
         className={styles.wshow}
         id="wshow"
-        onMouseOver={(e) => {
-          const t = (e.target as HTMLElement).closest("[data-pid]")
-          if (!t) return
-          setHovId(t.getAttribute("data-pid"))
-        }}
-        onMouseLeave={() => setHovId(null)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
         <span className={`${styles.count} ${styles.num}`}>
           <b>{padIndex(cur)}</b> / 03
@@ -183,10 +190,7 @@ export function OriginSection() {
           <div
             ref={trackLRef}
             className={styles.wtrack}
-            style={{
-              height: `${N * 100}%`,
-              transform: "translate3d(0, 0, 0)",
-            }}
+            style={{ height: `${N * 100}%` }}
           >
             {STAGES.map((p) => (
               <div
@@ -194,7 +198,7 @@ export function OriginSection() {
                 className={styles.wcell}
                 style={{ height: `${100 / N}%` }}
               >
-                <StagePanel stage={p} hovered={hovId === p.id} />
+                <StagePanel stage={p} />
               </div>
             ))}
           </div>
@@ -206,8 +210,8 @@ export function OriginSection() {
             className={styles.wtrack}
             style={{
               height: `${N * 100}%`,
-              // Reversed stack: offset so stage 1 (Highlands) shows before JS runs
-              transform: `translate3d(0, -${TRAVEL}%, 0)`,
+              // Reversed stack: land on origin1 (bottom) before JS runs
+              transform: `translate3d(0, -${((N - 1) / N) * 100}%, 0)`,
             }}
           >
             {reversed.map((p) => (
@@ -216,60 +220,52 @@ export function OriginSection() {
                 className={styles.wcell}
                 style={{ height: `${100 / N}%` }}
               >
-                <StagePanel stage={p} hovered={hovId === p.id} />
+                <StagePanel stage={p} />
               </div>
             ))}
           </div>
+        </div>
+
+        <div
+          className={`${styles.wcopy} ${hovered ? styles.wcopyHov : ""}`}
+          aria-live="polite"
+        >
+          <span className={styles.wfullTags}>
+            {active.tags.map((t, i) => (
+              <span key={t}>
+                {i > 0 ? <i>·</i> : null}
+                {t}
+              </span>
+            ))}
+          </span>
+          <span className={styles.wfullName}>
+            {active.title.map((line, i) => (
+              <span key={line}>
+                {i > 0 ? <br /> : null}
+                {line}
+              </span>
+            ))}
+          </span>
         </div>
       </div>
     </section>
   )
 }
 
-function StagePanel({
-  stage,
-  hovered,
-}: {
-  stage: (typeof STAGES)[number]
-  hovered: boolean
-}) {
+function StagePanel({ stage }: { stage: (typeof STAGES)[number] }) {
   return (
-    <div
-      className={`${styles.wfull} ${hovered ? styles.wfullHov : ""}`}
-      data-pid={stage.id}
-      role="img"
-      aria-label={stage.alt}
-    >
+    <div className={styles.wfull} role="img" aria-label={stage.alt}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className={styles.wfullImg}
         src={stage.img}
-        alt={stage.alt}
+        alt=""
         draggable={false}
         decoding="async"
-        // All stages load eagerly — lazy + transform tracks never fired on mobile
         loading="eager"
         fetchPriority="low"
         style={{ objectPosition: stage.objectPosition }}
       />
-      <span className={styles.wfullUi}>
-        <span className={styles.wfullTags}>
-          {stage.tags.map((t, i) => (
-            <span key={t}>
-              {i > 0 ? <i>·</i> : null}
-              {t}
-            </span>
-          ))}
-        </span>
-        <span className={styles.wfullName}>
-          {stage.title.map((line, i) => (
-            <span key={line}>
-              {i > 0 ? <br /> : null}
-              {line}
-            </span>
-          ))}
-        </span>
-      </span>
     </div>
   )
 }

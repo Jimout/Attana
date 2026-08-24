@@ -70,7 +70,7 @@
   position: absolute;
   top: 0;
   height: 100%;
-  width: calc(50% + 1px);
+  width: 50%;
   overflow: hidden;
 }
 
@@ -79,7 +79,7 @@
 }
 
 .wcolR {
-  left: calc(50% - 1px);
+  left: 50%;
 }
 
 .wtrack {
@@ -93,19 +93,28 @@
 .wcell {
   position: relative;
   overflow: hidden;
+  height: 100%;
+  width: 100%;
 }
 
+/*
+  Split from the stage, not the viewport:
+  each panel is 200% of its 50% column (= full .wshow width).
+  Left shows 0–50%; right is shifted one column so it shows 50–100%.
+  No vw — halves stay the same photo on every screen / DPR.
+*/
 .wfull {
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
-  width: 100vw;
+  width: 200%;
   display: block;
 }
 
 .wcolR .wfull {
-  transform: translateX(calc(-50% + 1px));
+  left: -100%;
+  transform: none;
 }
 
 .wfullImg {
@@ -125,7 +134,8 @@
   background: var(--attana-overlay);
 }
 
-.wfullUi {
+/* One centered copy layer (not split) — letters never break at the seam */
+.wcopy {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -136,6 +146,7 @@
   gap: clamp(14px, 2.4vh, 24px);
   text-align: center;
   padding: 0 var(--pad);
+  pointer-events: none;
 }
 
 .wfullTags {
@@ -162,7 +173,7 @@
   transition: color 0.3s;
 }
 
-.wfullHov .wfullName {
+.wcopyHov .wfullName {
   color: var(--white);
 }
 
