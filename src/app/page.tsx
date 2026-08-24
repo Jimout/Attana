@@ -1,9 +1,9 @@
 import { Hero } from "@/components/hero/hero"
 import { AboutSection } from "@/components/sections/about-section"
 import { FeaturedCoffeeSection } from "@/components/sections/featured-coffee-section"
-import { FeaturedWorkSection } from "@/components/sections/featured-work-section"
+import { MosaicSection } from "@/components/sections/mosaic-section"
+import { OriginSection } from "@/components/sections/origin-section"
 import { SiteFooter } from "@/components/sections/site-footer"
-import { StudioStandardSection } from "@/components/sections/studio-standard-section"
 import { WhyAttanaSection } from "@/components/sections/why-attana-section"
 import { SiteHeader } from "@/components/site-header"
 
@@ -13,9 +13,9 @@ export default function Home() {
       <SiteHeader />
       <Hero />
       <AboutSection />
-      <StudioStandardSection />
+      <MosaicSection />
       <FeaturedCoffeeSection />
-      <FeaturedWorkSection />
+      <OriginSection />
       <WhyAttanaSection />
       <SiteFooter />
     </main>

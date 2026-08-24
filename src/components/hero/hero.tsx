@@ -34,8 +34,8 @@ export function Hero() {
         className="absolute inset-0"
         style={{
           background: `
-            linear-gradient(180deg, rgba(13,13,13,0.35) 0%, rgba(13,13,13,0.12) 40%, rgba(13,13,13,0.55) 75%, var(--attana-bg) 100%),
-            linear-gradient(90deg, rgba(13,13,13,0.35) 0%, transparent 55%)
+            linear-gradient(180deg, var(--attana-overlay) 0%, var(--attana-overlay-soft) 40%, var(--attana-overlay-strong) 75%, var(--attana-bg) 100%),
+            linear-gradient(90deg, var(--attana-overlay) 0%, transparent 55%)
           `,
         }}
       />

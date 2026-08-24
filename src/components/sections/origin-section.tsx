@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 
-import styles from "./featured-work-section.module.css"
+import styles from "./origin-section.module.css"
 
-/** Origin / Craft — Catalin Featured Work shell, Attana content */
+/** Origin / Craft — dual-column scrub stages */
 const STAGES = [
   {
     id: "highlands",
@@ -41,7 +41,7 @@ function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
 }
 
-export function FeaturedWorkSection() {
+export function OriginSection() {
   const showRef = useRef<HTMLDivElement>(null)
   const trackLRef = useRef<HTMLDivElement>(null)
   const trackRRef = useRef<HTMLDivElement>(null)

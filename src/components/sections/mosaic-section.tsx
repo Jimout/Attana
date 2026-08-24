@@ -32,10 +32,10 @@ const COLUMNS: MediaCell[][] = [
 ]
 
 const HEADLINE: { text: string; color: string; breakAfter?: boolean }[] = [
-  { text: "3 ORIGINS. ", color: "#ffffff", breakAfter: true },
-  { text: "ONE CRAFT. ", color: "#ffffff", breakAfter: true },
+  { text: "3 ORIGINS. ", color: "var(--attana-text)", breakAfter: true },
+  { text: "ONE CRAFT. ", color: "var(--attana-text)", breakAfter: true },
   { text: "PURE", color: "var(--attana-accent)" },
-  { text: " CHARACTER.", color: "#ffffff" },
+  { text: " CHARACTER.", color: "var(--attana-text)" },
 ]
 
 function Cell({ cell }: { cell: MediaCell }) {
@@ -170,14 +170,14 @@ function Headline({ progress }: { progress: MotionValue<number> }) {
 }
 
 
-export function StudioStandardSection() {
+export function MosaicSection() {
   const containerRef = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   })
 
-  // Mira: Media scale 3.1 â†’ 1 over ~200vh trigger; Dark Overlay 0 â†’ 0.65
+  // Mosaic zooms out and darkens as the sticky stage scrolls
   const mediaScale = useTransform(scrollYProgress, [0, 0.85], [3.1, 1])
   const overlayOpacity = useTransform(scrollYProgress, [0, 0.85], [0, 0.65])
 
@@ -190,17 +190,14 @@ export function StudioStandardSection() {
       aria-label="3 origins, one craft, pure character"
       data-scroll-progress
     >
-      {/* Work Reveal â€” sticky 100vh, padding 3px */}
       <div
         className="sticky top-0 z-[1] flex h-svh w-full flex-col items-center justify-center"
         style={{ padding: 3 }}
       >
-        {/* Inner â€” radius 12, clips scaled media */}
-          <div
+        <div
           className="relative flex h-full w-full flex-1 flex-col items-center justify-center overflow-hidden bg-[var(--attana-bg)]"
           style={{ borderRadius: 12 }}
         >
-          {/* Projects Collection / Media â€” 3 columns, gap 3px, scroll-scaled */}
           <motion.div
             className="absolute inset-0 flex flex-row items-center justify-center gap-[3px] will-change-transform"
             style={{ scale: mediaScale, transformOrigin: "50% 50%" }}
@@ -216,14 +213,14 @@ export function StudioStandardSection() {
               </div>
             ))}
 
-            {/* Dark Overlay — readability as mosaic zooms out */}
+            {/* Dark overlay for text readability */}
             <motion.div
               className="pointer-events-none absolute inset-0 z-[1] bg-[var(--attana-bg)]"
               style={{ opacity: overlayOpacity }}
             />
           </motion.div>
 
-          {/* Text reveal — centered like Mira */}
+          {/* Headline reveal over mosaic */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-[2] grid w-full max-w-[1920px] -translate-x-1/2 -translate-y-1/2 grid-cols-1 gap-5 px-[30px] md:grid-cols-4">
             <div className="hidden md:block" aria-hidden />
             <div className="md:col-span-3">
