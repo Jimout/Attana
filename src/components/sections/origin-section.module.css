@@ -308,10 +308,34 @@
 }
 
 /*
-  Phone only: real full-bleed stack (not a hacked half of the split).
-  Cell heights are set in px by JS so they match scrub translate exactly.
+  Phone / small touch: one full-bleed stack.
+  JS sets [data-origin-phone="true"] so layout matches scrub path.
+  Media query is the no-JS / first-paint fallback (same breakpoints).
 */
-@media (max-width: 480px) {
+.stickyScroll[data-origin-phone="true"] .split {
+  display: none;
+}
+
+.stickyScroll[data-origin-phone="true"] .mobileStack {
+  display: block;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.stickyScroll[data-origin-phone="true"] .mtrack {
+  display: flex;
+  flex-direction: column;
+}
+
+.stickyScroll[data-origin-phone="true"] .mcell {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 640px), ((pointer: coarse) and (max-width: 900px)) {
   .split {
     display: none;
   }
@@ -326,7 +350,6 @@
   .mtrack {
     display: flex;
     flex-direction: column;
-    /* height set in px via JS */
   }
 
   .mcell {
@@ -334,7 +357,6 @@
     flex: 0 0 auto;
     width: 100%;
     overflow: hidden;
-    /* height set in px via JS — must equal scrub step */
   }
 
   .wfullTags {

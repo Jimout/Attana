@@ -8,8 +8,9 @@ import styles from "./origin-section.module.css"
 
 /**
  * Origin / Craft — Catalin Featured Work scrub.
- * Desktop: opposite-column split. Phone (≤480px): full-bleed stack 01→02→03.
- * Same sticky runway + hold/wipe timing — no GSAP pin.
+ * Desktop: opposite-column split.
+ * Small / touch phones: one full-bleed stack 01→02→03 (same holds, longer runway).
+ * No GSAP pin.
  */
 const STAGES = [
   {
@@ -42,9 +43,16 @@ const STAGES = [
 ] as const
 
 const N: number = STAGES.length
-/** Parent = 1 sticky viewport + (N-1) scrub travel. */
-const SCROLL_VH = N
-const NARROW_MQ = "(max-width: 480px)"
+/** Desktop runway: 1 sticky + (N-1) travel */
+const SCROLL_VH_DESKTOP = N
+/** Phone: extra travel so 01/02/03 each get a real stop */
+const SCROLL_VH_PHONE = N + 1.5
+/**
+ * Must match CSS. Covers tiny phones + touch devices up to ~900px
+ * (portrait + landscape) without flipping iPad Pro desktop split.
+ */
+const PHONE_MQ =
+  "(max-width: 640px), ((pointer: coarse) and (max-width: 900px))"
 
 function padIndex(i: number) {
   return String(i + 1).padStart(2, "0")
@@ -65,7 +73,7 @@ export function OriginSection() {
     const isCoarse = window.matchMedia(
       "(hover: none), (pointer: coarse)",
     ).matches
-    const narrowMq = window.matchMedia(NARROW_MQ)
+    const phoneMq = window.matchMedia(PHONE_MQ)
     const scroller = scrollRef.current
     const show = showRef.current
     const trackL = trackLRef.current
@@ -74,13 +82,25 @@ export function OriginSection() {
 
     if (!scroller || !show || !trackL || !trackR || !trackM) return
 
+    const isPhone = () => phoneMq.matches
+
+    const syncPhoneUi = () => {
+      const phone = isPhone()
+      scroller.dataset.originPhone = phone ? "true" : "false"
+      scroller.style.setProperty(
+        "--origin-scroll-vh",
+        String(phone ? SCROLL_VH_PHONE : SCROLL_VH_DESKTOP),
+      )
+    }
+
     /**
-     * Catalin timing (same up & down):
-     * hold → wipe → hold → wipe → hold.
+     * Catalin timing (same up & down): hold → wipe → hold → wipe → hold.
+     * Phone: longer holds so 01 doesn’t zip; desktop unchanged.
      */
     const stageFromScroll = (p: number) => {
       if (N <= 1) return 0
-      const holdW = isCoarse ? 1.2 : 1.4
+      const phone = isPhone()
+      const holdW = phone ? 1.7 : isCoarse ? 1.2 : 1.4
       const moveW = 1
       const total = N * holdW + (N - 1) * moveW
       let u = gsap.utils.clamp(0, 1, p) * total
@@ -95,16 +115,30 @@ export function OriginSection() {
       return N - 1
     }
 
-    /** Pixel-size a track so each cell === cellH (matches scrub translate). */
-    let lastCellH = 0
+    /**
+     * Lock slide height against iOS URL-bar jitter so scrub stays on time.
+     * Only relock on real size jumps (orientation / large resize).
+     */
+    let lockedH = 0
+    const cellHeight = () => {
+      const h = Math.max(1, Math.round(show.clientHeight))
+      if (!lockedH || Math.abs(h - lockedH) >= 56) lockedH = h
+      return lockedH
+    }
+
     const sizeTrack = (track: HTMLElement, cellH: number) => {
       const h = Math.max(1, Math.round(cellH))
-      if (h !== lastCellH || track.style.height !== `${N * h}px`) {
+      if (track.style.height !== `${N * h}px`) {
         track.style.height = `${N * h}px`
         for (let i = 0; i < track.children.length; i++) {
           const cell = track.children[i] as HTMLElement
           cell.style.height = `${h}px`
           cell.style.flexShrink = "0"
+        }
+      } else {
+        for (let i = 0; i < track.children.length; i++) {
+          const cell = track.children[i] as HTMLElement
+          if (cell.style.height !== `${h}px`) cell.style.height = `${h}px`
         }
       }
       return h
@@ -112,15 +146,13 @@ export function OriginSection() {
 
     const applyProgress = (p: number) => {
       const stage = stageFromScroll(p)
-      const rawH = show.clientHeight
-      if (narrowMq.matches) {
-        const cellH = sizeTrack(trackM, rawH)
-        lastCellH = cellH
+      const cellH = cellHeight()
+      if (isPhone()) {
+        sizeTrack(trackM, cellH)
         gsap.set(trackM, { y: -cellH * stage, force3D: true })
       } else {
-        const cellH = sizeTrack(trackL, rawH)
+        sizeTrack(trackL, cellH)
         sizeTrack(trackR, cellH)
-        lastCellH = cellH
         gsap.set(trackL, { y: -cellH * stage, force3D: true })
         gsap.set(trackR, { y: -cellH * (N - 1 - stage), force3D: true })
       }
@@ -128,6 +160,7 @@ export function OriginSection() {
       setCur((c) => (c === next ? c : next))
     }
 
+    syncPhoneUi()
     applyProgress(0)
 
     if (reduced) return
@@ -136,7 +169,8 @@ export function OriginSection() {
       trigger: scroller,
       start: "top top",
       end: "bottom bottom",
-      scrub: isCoarse ? 0.2 : 0.35,
+      // Touch: immediate scrub so stages stay on time with the finger
+      scrub: isCoarse ? true : 0.35,
       invalidateOnRefresh: !isCoarse,
       onUpdate(self) {
         applyProgress(self.progress)
@@ -145,39 +179,41 @@ export function OriginSection() {
       onLeaveBack: () => applyProgress(0),
     })
 
+    const softRefresh = () => {
+      syncPhoneUi()
+      ScrollTrigger.refresh()
+      applyProgress(st.progress)
+    }
+
+    const hardRelayout = () => {
+      lockedH = 0
+      softRefresh()
+    }
+
     const onResize = () => {
       if (isCoarse) return
-      ScrollTrigger.refresh()
-      applyProgress(st.progress)
+      softRefresh()
     }
     const onOrientation = () => {
-      ScrollTrigger.refresh()
-      applyProgress(st.progress)
+      window.setTimeout(hardRelayout, 120)
     }
-    const onNarrowChange = () => {
-      ScrollTrigger.refresh()
-      applyProgress(st.progress)
+    const onPhoneChange = () => {
+      hardRelayout()
     }
 
     window.addEventListener("resize", onResize)
     window.addEventListener("orientationchange", onOrientation)
-    narrowMq.addEventListener("change", onNarrowChange)
+    phoneMq.addEventListener("change", onPhoneChange)
 
-    const raf = requestAnimationFrame(() => {
-      ScrollTrigger.refresh()
-      applyProgress(st.progress)
-    })
-    const boot = window.setTimeout(() => {
-      ScrollTrigger.refresh()
-      applyProgress(st.progress)
-    }, 300)
+    const raf = requestAnimationFrame(() => softRefresh())
+    const boot = window.setTimeout(() => softRefresh(), 300)
 
     return () => {
       cancelAnimationFrame(raf)
       window.clearTimeout(boot)
       window.removeEventListener("resize", onResize)
       window.removeEventListener("orientationchange", onOrientation)
-      narrowMq.removeEventListener("change", onNarrowChange)
+      phoneMq.removeEventListener("change", onPhoneChange)
       st.kill()
       applyProgress(0)
     }
@@ -196,7 +232,7 @@ export function OriginSection() {
         className={styles.stickyScroll}
         style={
           {
-            ["--origin-scroll-vh" as string]: String(SCROLL_VH),
+            ["--origin-scroll-vh" as string]: String(SCROLL_VH_DESKTOP),
           } as React.CSSProperties
         }
       >
