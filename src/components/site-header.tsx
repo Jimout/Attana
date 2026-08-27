@@ -61,7 +61,7 @@ export function SiteHeader() {
               : "1px solid transparent",
         }}
       >
-        <div className="mx-auto flex h-[64px] max-w-[var(--attana-max)] items-center justify-between gap-4 sm:h-[72px]">
+        <div className="flex h-[64px] w-full items-center justify-between gap-4 sm:h-[72px]">
           <a
             href="#top"
             onClick={() => setOpen(false)}
